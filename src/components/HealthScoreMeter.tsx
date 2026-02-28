@@ -3,21 +3,17 @@ import clsx from "clsx";
 
 interface HealthScoreMeterProps {
     score: number; // 0 to 100
-    trend?: "up" | "down" | "flat";
     message?: string;
 }
 
-export function HealthScoreMeter({ score, trend = "flat", message }: HealthScoreMeterProps) {
+export function HealthScoreMeter({ score, message }: HealthScoreMeterProps) {
     // Determine color based on score
     let colorClass = "text-green-500";
-    let bgClass = "bg-green-500";
 
     if (score < 50) {
         colorClass = "text-red-500";
-        bgClass = "bg-red-500";
     } else if (score < 75) {
         colorClass = "text-yellow-500";
-        bgClass = "bg-yellow-500";
     }
 
     return (
