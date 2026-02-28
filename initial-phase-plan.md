@@ -22,11 +22,11 @@ Set up the core infrastructure, Mock Banking API, and PostgreSQL database with p
 - [x] Task 9: Create the "Financial Health Score" meter component UI → Verify: Component renders visually with a static test prop value
 
 ## Done When
-- [ ] Database is running and accepting connections
-- [ ] Deterministic core calculations are unit-tested and correct
-- [ ] Mock API serves data to `/transactions`, `/balances`, and `/products`
-- [ ] Frontend shell is running with Tailwind and basic routing
-- [ ] Health Score meter component is complete
+- [x] Database is running and accepting connections
+- [x] Deterministic core calculations are unit-tested and correct
+- [x] Mock API serves data to `/transactions`, `/balances`, and `/products`
+- [x] Frontend shell is running with Tailwind and basic routing
+- [x] Health Score meter component is complete
 
 ## Notes
 - Do not touch LLMs or Agents yet. This phase is purely about infrastructure and deterministic features.
