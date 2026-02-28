@@ -8,7 +8,6 @@ export default function Dashboard() {
             <div className="grid gap-6 md:grid-cols-2">
                 <HealthScoreMeter
                     score={68}
-                    trend="flat"
                     message="You're saving well, but dining out is volatile."
                 />
 
