@@ -8,7 +8,12 @@ import Simulator from "./pages/Simulator";
 import Products from "./pages/Products";
 import Accounts from "./pages/Accounts";
 import Chat from "./pages/Chat";
-
+import AdminLayout from "./layouts/AdminLayout";
+import AdminOverview from "./pages/admin/AdminOverview";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminUserDetail from "./pages/admin/AdminUserDetail";
+import AdminAgentMonitor from "./pages/admin/AdminAgentMonitor";
+import AdminSimulation from "./pages/admin/AdminSimulation";
 export default function App() {
   return (
     <AuthProvider>
@@ -26,12 +31,14 @@ export default function App() {
             <Route path="chat" element={<Chat />} />
           </Route>
 
-          {/* Admin Protected Routes Placeholder */}
-          <Route path="/admin/*" element={
-            <ProtectedRoute requireAdmin={true}>
-              <div className="p-8"><h1 className="text-3xl font-bold text-red-600">Admin Dashboard Placeholder</h1></div>
-            </ProtectedRoute>
-          } />
+          {/* Admin Protected Routes */}
+          <Route path="/admin" element={<ProtectedRoute requireAdmin={true}><AdminLayout /></ProtectedRoute>}>
+            <Route index element={<AdminOverview />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="users/:userId" element={<AdminUserDetail />} />
+            <Route path="agents" element={<AdminAgentMonitor />} />
+            <Route path="simulation" element={<AdminSimulation />} />
+          </Route>
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
