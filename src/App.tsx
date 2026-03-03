@@ -1,31 +1,42 @@
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import Login from "./pages/Login";
+import UserLayout from "./layouts/UserLayout";
 import Dashboard from "./pages/Dashboard";
 import Simulator from "./pages/Simulator";
 import Products from "./pages/Products";
+import Accounts from "./pages/Accounts";
+import Chat from "./pages/Chat";
 
 export default function App() {
   return (
-    <Router>
-      <div className="min-h-screen flex flex-col pt-16">
-        {/* Navigation Bar */}
-        <nav className="bg-white border-b border-slate-200 fixed top-0 w-full z-10 px-6 h-16 flex items-center justify-between shadow-sm">
-          <div className="font-bold text-xl text-blue-600">CareBank</div>
-          <div className="space-x-8 text-sm font-medium text-slate-600">
-            <Link to="/" className="hover:text-blue-600 transition-colors">Dashboard</Link>
-            <Link to="/simulator" className="hover:text-blue-600 transition-colors">What-If Simulator</Link>
-            <Link to="/products" className="hover:text-blue-600 transition-colors">Products</Link>
-          </div>
-        </nav>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/login" element={<Login />} />
 
-        {/* Main Content Area */}
-        <main className="flex-1 bg-slate-50">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/simulator" element={<Simulator />} />
-            <Route path="/products" element={<Products />} />
-          </Routes>
-        </main>
-      </div>
-    </Router>
+          {/* User Protected Routes with UserLayout */}
+          <Route path="/" element={<ProtectedRoute><UserLayout /></ProtectedRoute>}>
+            <Route index element={<Dashboard />} />
+            <Route path="simulator" element={<Simulator />} />
+            <Route path="products" element={<Products />} />
+            <Route path="accounts" element={<Accounts />} />
+            <Route path="chat" element={<Chat />} />
+          </Route>
+
+          {/* Admin Protected Routes Placeholder */}
+          <Route path="/admin/*" element={
+            <ProtectedRoute requireAdmin={true}>
+              <div className="p-8"><h1 className="text-3xl font-bold text-red-600">Admin Dashboard Placeholder</h1></div>
+            </ProtectedRoute>
+          } />
+
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 }
