@@ -31,9 +31,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (storedToken) {
                 try {
                     // Check expiration
-                    const decoded: any = jwtDecode(storedToken);
-                    if (decoded.exp * 1000 < Date.now()) {
-                        throw new Error('Token expired');
+                    const decoded = jwtDecode<{ exp?: number }>(storedToken);
+                    if (typeof decoded.exp !== 'number' || decoded.exp * 1000 < Date.now()) {
+                        throw new Error('Token expired or invalid');
                     }
 
                     setToken(storedToken);
@@ -51,6 +51,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
 
         initAuth();
+
+        const handleUnauthorized = () => {
+            logout();
+            if (window.location.pathname !== '/login') {
+                window.location.href = '/login';
+            }
+        };
+
+        window.addEventListener('auth-unauthorized', handleUnauthorized);
+        return () => window.removeEventListener('auth-unauthorized', handleUnauthorized);
     }, []);
 
     const login = (newToken: string, newUser: User) => {
@@ -81,6 +91,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (context === undefined) {

@@ -32,8 +32,9 @@ export default function Login() {
             } else {
                 navigate(from, { replace: true });
             }
-        } catch (err: any) {
-            setError(err.response?.data?.detail || 'Failed to login. Please check your credentials.');
+        } catch (err) {
+            const _err = err as { response?: { data?: { detail?: string } } };
+            setError(_err.response?.data?.detail || 'Failed to login. Please check your credentials.');
         } finally {
             setLoading(false);
         }
@@ -104,9 +105,11 @@ export default function Login() {
                         </button>
                     </form>
 
-                    <div className="mt-8 pt-6 border-t border-slate-100 text-center text-sm text-slate-500">
-                        For demo purposes, use <strong className="text-slate-700">user001@carebank.demo</strong> with <strong className="text-slate-700">CareBank001!</strong>
-                    </div>
+                    {import.meta.env.VITE_SHOW_DEMO_CREDENTIALS === 'true' && (
+                        <div className="mt-8 pt-6 border-t border-slate-100 text-center text-sm text-slate-500">
+                            For demo purposes, use <strong className="text-slate-700">user001@carebank.demo</strong> with <strong className="text-slate-700">CareBank001!</strong>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

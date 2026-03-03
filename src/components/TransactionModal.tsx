@@ -41,8 +41,9 @@ export function TransactionModal({ isOpen, onClose, accountId, onSuccess }: Tran
 
             onSuccess();
             onClose();
-        } catch (err: any) {
-            setError(err.response?.data?.detail || 'Transaction failed. Please try again.');
+        } catch (err) {
+            const _err = err as { response?: { data?: { detail?: string } } };
+            setError(_err.response?.data?.detail || 'Transaction failed. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -63,8 +64,8 @@ export function TransactionModal({ isOpen, onClose, accountId, onSuccess }: Tran
                         <button
                             onClick={() => setType('deposit')}
                             className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-colors ${type === 'deposit'
-                                    ? 'border-emerald-600 bg-emerald-50 text-emerald-700'
-                                    : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200'
+                                ? 'border-emerald-600 bg-emerald-50 text-emerald-700'
+                                : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200'
                                 }`}
                         >
                             <div className={`p-2 rounded-full mb-2 ${type === 'deposit' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100'}`}>
@@ -76,8 +77,8 @@ export function TransactionModal({ isOpen, onClose, accountId, onSuccess }: Tran
                         <button
                             onClick={() => setType('withdrawal')}
                             className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-colors ${type === 'withdrawal'
-                                    ? 'border-orange-600 bg-orange-50 text-orange-700'
-                                    : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200'
+                                ? 'border-orange-600 bg-orange-50 text-orange-700'
+                                : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200'
                                 }`}
                         >
                             <div className={`p-2 rounded-full mb-2 ${type === 'withdrawal' ? 'bg-orange-100 text-orange-600' : 'bg-slate-100'}`}>
