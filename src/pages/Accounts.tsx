@@ -4,12 +4,16 @@ import { TransactionModal } from "../components/TransactionModal";
 import { WalletCards, Plus, ArrowRightLeft, CreditCard, Landmark } from "lucide-react";
 
 interface Account {
-    id: string;
+    account_id: string;
     account_number: string;
     account_type: "checking" | "savings" | "credit_card";
     name: string;
-    balance: number;
+    current_balance: number;
+    available_balance: number;
     status: string;
+    mask: string;
+    currency: string;
+    institution: string;
 }
 
 export default function Accounts() {
@@ -19,7 +23,7 @@ export default function Accounts() {
 
     const fetchAccounts = async () => {
         try {
-            const response = await api.get("/api/accounts");
+            const response = await api.get("/api/accounts/");
             setAccounts(response.data);
         } catch (err) {
             console.error("Failed to load accounts", err);
@@ -34,7 +38,7 @@ export default function Accounts() {
 
     const getAccountIcon = (type: string) => {
         switch (type) {
-            case 'credit_card': return <CreditCard className="w-6 h-6 text-purple-600" />;
+            case 'credit_card': return <CreditCard className="w-6 h-6 text-rose-600" />;
             case 'savings': return <Landmark className="w-6 h-6 text-emerald-600" />;
             default: return <WalletCards className="w-6 h-6 text-blue-600" />;
         }
@@ -42,7 +46,7 @@ export default function Accounts() {
 
     const getAccountColor = (type: string) => {
         switch (type) {
-            case 'credit_card': return 'bg-purple-50 border-purple-100';
+            case 'credit_card': return 'bg-rose-50 border-rose-100';
             case 'savings': return 'bg-emerald-50 border-emerald-100';
             default: return 'bg-blue-50 border-blue-100';
         }
@@ -68,7 +72,7 @@ export default function Accounts() {
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {accounts.map(account => (
-                    <div key={account.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                    <div key={account.account_id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
                         <div className={`p-6 border-b flex-1 ${getAccountColor(account.account_type)}`}>
                             <div className="flex items-start justify-between mb-4">
                                 <div className="bg-white p-3 rounded-xl shadow-sm">
@@ -81,27 +85,30 @@ export default function Accounts() {
                             </div>
 
                             <h3 className="text-lg font-bold text-slate-900 mb-1">{account.name}</h3>
-                            <p className="text-sm font-mono text-slate-500 mb-6">
-                                xxxx-xxxx-{account.account_number.slice(-4)}
+                            <p className="text-sm font-mono text-slate-500 mb-4">
+                                {account.institution} • ****{account.mask || account.account_number?.slice(-4)}
                             </p>
 
-                            <div className="mt-auto">
-                                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Current Balance</p>
+                            <div className="space-y-1">
+                                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Current Balance</p>
                                 <p className="text-3xl font-bold text-slate-900 tracking-tight">
-                                    ₹ {account.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                    ₹ {account.current_balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                 </p>
+                                {account.available_balance !== account.current_balance && (
+                                    <p className="text-xs text-slate-500">
+                                        Available: ₹ {account.available_balance.toLocaleString('en-IN')}
+                                    </p>
+                                )}
                             </div>
                         </div>
 
                         <div className="p-4 bg-white grid grid-cols-2 gap-3">
-                            <button
-                                className="col-span-1 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 text-sm font-semibold rounded-lg transition-colors"
-                            >
+                            <button className="col-span-1 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 text-sm font-semibold rounded-lg transition-colors">
                                 Details
                             </button>
                             <button
-                                onClick={() => setSelectedAccountId(account.id)}
-                                className="col-span-1 px-4 py-2 bg-blue-50 flex items-center justify-center space-x-2 hover:bg-blue-100 text-blue-700 text-sm font-semibold rounded-lg transition-colors"
+                                onClick={() => setSelectedAccountId(account.account_id)}
+                                className="col-span-1 px-4 py-2 bg-blue-50 flex items-center justify-center space-x-2 hover:bg-blue-100 text-blue-700 text-sm font-semibold rounded-lg transition-colors disabled:opacity-40"
                                 disabled={account.status !== 'active' || account.account_type === 'credit_card'}
                             >
                                 <ArrowRightLeft className="w-4 h-4" />

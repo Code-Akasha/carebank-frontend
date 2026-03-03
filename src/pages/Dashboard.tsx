@@ -10,11 +10,12 @@ interface Balance {
 }
 
 interface Transaction {
-    id: string;
+    id: number;
     amount: number;
     date: string;
+    merchant: string;
+    category: string;
     description: string;
-    status: string;
 }
 
 export default function Dashboard() {
@@ -28,9 +29,9 @@ export default function Dashboard() {
         const fetchDashboardData = async () => {
             try {
                 const [balRes, healthRes, txRes] = await Promise.all([
-                    api.get("/api/balances"),
-                    api.get("/api/health-score"),
-                    api.get("/api/transactions?limit=5"),
+                    api.get("/api/balances/"),
+                    api.get("/api/health-score/"),
+                    api.get("/api/transactions/?limit=5"),
                 ]);
                 setBalance(balRes.data);
                 setHealthScore(healthRes.data);
@@ -97,8 +98,7 @@ export default function Dashboard() {
                     {transactions.slice(0, 5).map((tx) => (
                         <div key={tx.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
                             <div className="flex items-center space-x-4">
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${tx.amount < 0 ? 'bg-orange-100' : 'bg-emerald-100'
-                                    }`}>
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${tx.amount < 0 ? 'bg-orange-100' : 'bg-emerald-100'}`}>
                                     {tx.amount < 0 ? (
                                         <ArrowDownLeft className="w-5 h-5 text-orange-600" />
                                     ) : (
@@ -106,21 +106,24 @@ export default function Dashboard() {
                                     )}
                                 </div>
                                 <div>
-                                    <p className="text-sm font-medium text-slate-900">{tx.description}</p>
-                                    <div className="flex items-center space-x-1 mt-0.5">
+                                    <p className="text-sm font-medium text-slate-900">{tx.merchant || tx.description || 'Transaction'}</p>
+                                    <div className="flex items-center space-x-2 mt-0.5">
                                         <Clock className="w-3 h-3 text-slate-400" />
                                         <p className="text-xs text-slate-500">
-                                            {new Date(tx.date).toLocaleDateString()}
+                                            {new Date(tx.date).toLocaleDateString('en-IN')}
                                         </p>
+                                        {tx.category && (
+                                            <span className="text-xs text-slate-400 capitalize bg-slate-100 px-1.5 py-0.5 rounded">
+                                                {tx.category}
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                             </div>
                             <div className="text-right">
-                                <p className={`text-sm font-bold ${tx.amount < 0 ? 'text-slate-900' : 'text-emerald-600'
-                                    }`}>
-                                    {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString('en-IN')}
+                                <p className={`text-sm font-bold ${tx.amount < 0 ? 'text-slate-900' : 'text-emerald-600'}`}>
+                                    {tx.amount > 0 ? '+' : ''}₹{Math.abs(tx.amount).toLocaleString('en-IN')}
                                 </p>
-                                <p className="text-xs text-slate-500 capitalize">{tx.status}</p>
                             </div>
                         </div>
                     ))}

@@ -15,7 +15,7 @@ This workflow automates the process of committing and pushing changes to the cor
 ### Steps:
 
 // turbo
-1. **Fetch Latest Changes (MANDATORY)**
+1. **Fetch Latest Changes & Rebase (MANDATORY)**
    - Always fetch the latest remote state before anything else: `git fetch origin`
    - Check if the current branch is behind its remote: `git status -uno`
    - If behind, rebase onto the latest: `git pull --rebase origin <current-branch>` or `git rebase origin/develop` if on a feature branch
@@ -34,9 +34,10 @@ This workflow automates the process of committing and pushing changes to the cor
    - Stage the changes using `git add <files>` or `git add .` if appropriate.
 
 // turbo
-4. **Commit Changes**
+4. **Commit Changes (Always GPG Sign)**
    - Generate a conventional commit message (format: `<type>(<scope>): <subject>`) based on the staged changes.
-   - Commit the changes using `git commit -m "..."`.
+   - ALWAYS commit the changes with a GPG signature using `git commit -S -m "..."`.
+   - **GPG Troubleshooting**: If GPG signing fails (e.g., "socket file removed"), kill the agent by running `gpgconf --kill gpg-agent` and try committing again. If it continues to fail consistently, you can momentarily use `--no-gpg-sign` to bypass, but this is highly discouraged.
 
 // turbo
 5. **Push to Remote**

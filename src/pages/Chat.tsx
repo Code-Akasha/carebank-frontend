@@ -50,7 +50,8 @@ export default function Chat() {
         try {
             const response = await api.post("/api/chat", {
                 message: userMessage.content,
-                thread_id: "default" // Simplified for now
+                user_id: user?.user_id,
+                thread_id: user?.user_id || "default"
             });
 
             const agentMessage: Message = {
@@ -104,8 +105,8 @@ export default function Chat() {
                         </div>
 
                         <div className={`p-4 rounded-2xl ${msg.sender === 'user'
-                                ? 'bg-blue-600 text-white rounded-tr-none'
-                                : 'bg-slate-100 text-slate-800 rounded-tl-none'
+                            ? 'bg-blue-600 text-white rounded-tr-none'
+                            : 'bg-slate-100 text-slate-800 rounded-tl-none'
                             }`}>
                             <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                             <p className={`text-[10px] mt-2 ${msg.sender === 'user' ? 'text-blue-200' : 'text-slate-400'}`}>
