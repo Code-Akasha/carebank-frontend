@@ -8,7 +8,6 @@ interface SimulationStatus {
 }
 
 interface User {
-    id: number;
     user_id: string;
     email: string;
     full_name: string;
@@ -22,7 +21,7 @@ export default function AdminSimulation() {
 
     // Scenario triggering state
     const [selectedUser, setSelectedUser] = useState('');
-    const [scenarioType, setScenarioType] = useState('large_expense');
+    const [scenarioType, setScenarioType] = useState('large_medical_expense');
     const [triggering, setTriggering] = useState(false);
     const [triggerResult, setTriggerResult] = useState<{ success?: boolean, message?: string } | null>(null);
 
@@ -44,7 +43,7 @@ export default function AdminSimulation() {
 
     const fetchUsers = async () => {
         try {
-            const response = await api.get('/api/admin/users?per_page=100');
+            const response = await api.get('/api/admin/users?per_page=50');
             setUsers(response.data.users || []);
         } catch (error) {
             console.error('Failed to load users:', error);
@@ -162,7 +161,7 @@ export default function AdminSimulation() {
                                 >
                                     <option value="" disabled>Select a user...</option>
                                     {users.map((user) => (
-                                        <option key={user.id} value={user.user_id}>
+                                        <option key={user.user_id} value={user.user_id}>
                                             {user.full_name} ({user.email}) - {user.user_id}
                                         </option>
                                     ))}
@@ -176,9 +175,9 @@ export default function AdminSimulation() {
                                         <input
                                             type="radio"
                                             name="scenario"
-                                            value="large_expense"
-                                            checked={scenarioType === 'large_expense'}
-                                            onChange={() => setScenarioType('large_expense')}
+                                            value="large_medical_expense"
+                                            checked={scenarioType === 'large_medical_expense'}
+                                            onChange={() => setScenarioType('large_medical_expense')}
                                             className="h-4 w-4 text-blue-600 border-slate-300 focus:ring-blue-500"
                                         />
                                         <div className="ml-3">
@@ -191,9 +190,9 @@ export default function AdminSimulation() {
                                         <input
                                             type="radio"
                                             name="scenario"
-                                            value="salary_deposit"
-                                            checked={scenarioType === 'salary_deposit'}
-                                            onChange={() => setScenarioType('salary_deposit')}
+                                            value="salary_credit"
+                                            checked={scenarioType === 'salary_credit'}
+                                            onChange={() => setScenarioType('salary_credit')}
                                             className="h-4 w-4 text-blue-600 border-slate-300 focus:ring-blue-500"
                                         />
                                         <div className="ml-3">

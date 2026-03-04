@@ -12,13 +12,12 @@ interface AdminStats {
 
 interface AgentLog {
     id: number;
-    agent_name: string;
-    action_type: string;
-    input_data: unknown;
-    output_data: unknown;
-    processing_time_ms: number;
+    user_message: string | null;
+    intent: string | null;
+    agent_used: string | null;
+    agent_response: string | null;
     timestamp: string;
-    user_id: string;
+    user_id: string | null;
 }
 
 export default function AdminOverview() {
@@ -31,14 +30,14 @@ export default function AdminOverview() {
             try {
                 setLoading(true);
                 // Fetch users to calculate stats
-                const usersResponse = await api.get('/api/admin/users?per_page=100');
+                const usersResponse = await api.get('/api/admin/users?per_page=50');
                 const usersData = usersResponse.data;
                 const users = usersData.users || [];
 
                 // Calculate basic stats
                 const totalUsers = usersData.total || users.length;
                 const activeUsers = users.filter((u: { is_active?: boolean }) => u.is_active !== false).length;
-                const totalBalance = users.reduce((acc: number, user: { current_balance?: number }) => {
+                const totalBalance = users.reduce((acc: number, user: { current_balance?: number | null }) => {
                     return acc + (user.current_balance || 0);
                 }, 0);
 
@@ -154,26 +153,26 @@ export default function AdminOverview() {
                         {recentLogs.length === 0 ? (
                             <div className="p-8 text-center text-slate-500">No agent activity logged yet.</div>
                         ) : (
-                            recentLogs.map((log) => (
-                                <div key={log.id} className="p-4 hover:bg-slate-50 transition-colors">
+                            recentLogs.map((log, index) => (
+                                <div key={log.id ?? `${log.timestamp}-${index}`} className="p-4 hover:bg-slate-50 transition-colors">
                                     <div className="flex justify-between items-start mb-1">
                                         <div className="flex items-center">
                                             <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-800 mr-3">
-                                                {log.agent_name}
+                                                {log.agent_used || 'unknown'}
                                             </span>
-                                            <span className="text-sm font-semibold text-slate-700">{log.action_type}</span>
+                                            <span className="text-sm font-semibold text-slate-700">{log.intent || 'general'}</span>
                                         </div>
                                         <span className="text-xs text-slate-400">
                                             {new Date(log.timestamp).toLocaleTimeString()}
                                         </span>
                                     </div>
                                     <div className="mt-2 text-sm text-slate-600 bg-slate-50 p-2 rounded border border-slate-100 font-mono text-xs overflow-x-auto">
-                                        {JSON.stringify(log.output_data).substring(0, 120)}...
+                                        {String(log.agent_response || log.user_message || '').slice(0, 120) || '(no payload)'}
                                     </div>
                                     <div className="mt-2 text-xs text-slate-400 flex items-center justify-between">
-                                        <span>User: {log.user_id}</span>
+                                        <span>User: {log.user_id || 'unknown'}</span>
                                         <span className="px-2 py-0.5 bg-green-50 text-green-700 rounded-sm">
-                                            {log.processing_time_ms}ms
+                                            log #{log.id}
                                         </span>
                                     </div>
                                 </div>
