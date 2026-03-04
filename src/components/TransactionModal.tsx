@@ -32,7 +32,7 @@ export function TransactionModal({ isOpen, onClose, accountId, onSuccess }: Tran
         setLoading(true);
 
         try {
-            await api.post('/api/transactions', {
+            await api.post('/api/transactions/trigger', {
                 account_id: accountId,
                 amount: parsedAmount,
                 type: type,
