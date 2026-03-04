@@ -42,8 +42,30 @@ export function TransactionModal({ isOpen, onClose, accountId, onSuccess }: Tran
             onSuccess();
             onClose();
         } catch (err) {
-            const _err = err as { response?: { data?: { detail?: string } } };
-            setError(_err.response?.data?.detail || 'Transaction failed. Please try again.');
+            const _err = err as { 
+                response?: { 
+                    data?: { 
+                        detail?: string | object;
+                        errors?: Array<{ msg: string }>;
+                    } 
+                } 
+            };
+            
+            // Handle Pydantic validation errors
+            if (_err.response?.data) {
+                const data = _err.response.data;
+                if (Array.isArray(data)) {
+                    // Pydantic validation error format
+                    const messages = data.map((e: any) => e.msg || 'Invalid field').join(', ');
+                    setError(messages);
+                } else if (typeof data === 'object' && 'detail' in data) {
+                    setError(typeof data.detail === 'string' ? data.detail : 'Transaction failed. Please try again.');
+                } else {
+                    setError(JSON.stringify(data).substring(0, 100) || 'Transaction failed. Please try again.');
+                }
+            } else {
+                setError('Transaction failed. Please try again.');
+            }
         } finally {
             setLoading(false);
         }
