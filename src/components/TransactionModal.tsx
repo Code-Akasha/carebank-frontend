@@ -56,7 +56,19 @@ export function TransactionModal({ isOpen, onClose, accountId, onSuccess }: Tran
                 const data = _err.response.data;
                 if (Array.isArray(data)) {
                     // Pydantic validation error format
-                    const messages = data.map((e: any) => e.msg || 'Invalid field').join(', ');
+                    const messages = data
+                        .map((item: unknown) => {
+                            if (
+                                typeof item === 'object' &&
+                                item !== null &&
+                                'msg' in item &&
+                                typeof (item as { msg?: unknown }).msg === 'string'
+                            ) {
+                                return (item as { msg: string }).msg;
+                            }
+                            return 'Invalid field';
+                        })
+                        .join(', ');
                     setError(messages);
                 } else if (typeof data === 'object' && 'detail' in data) {
                     setError(typeof data.detail === 'string' ? data.detail : 'Transaction failed. Please try again.');
