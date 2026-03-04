@@ -12,12 +12,13 @@ interface Account {
 }
 
 interface User {
-    id: number;
     user_id: string;
     email: string;
     full_name: string;
     role: string;
     is_active: boolean;
+    current_balance?: number | null;
+    available_balance?: number | null;
     accounts?: Account[];
 }
 
@@ -30,7 +31,7 @@ export default function AdminUsers() {
         const fetchUsers = async () => {
             try {
                 setLoading(true);
-                const response = await api.get('/api/admin/users?per_page=100');
+                const response = await api.get('/api/admin/users?per_page=50');
                 setUsers(response.data.users || []);
             } catch (error) {
                 console.error('Failed to load users:', error);
@@ -108,7 +109,7 @@ export default function AdminUsers() {
                                 </tr>
                             ) : (
                                 filteredUsers.map((user) => (
-                                    <tr key={user.id} className="hover:bg-slate-50 transition-colors group">
+                                    <tr key={user.user_id} className="hover:bg-slate-50 transition-colors group">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center">
                                                 <div className="flex-shrink-0 h-10 w-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-500">
@@ -125,9 +126,9 @@ export default function AdminUsers() {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm font-semibold text-slate-900">
-                                                {formatCurrency(((user.accounts as { balance?: number }[]) || []).reduce((sum: number, acc) => sum + (acc.balance || 0), 0))}
+                                                {formatCurrency(user.current_balance || 0)}
                                             </div>
-                                            <div className="text-xs text-slate-500">{user.accounts?.length || 0} accounts</div>
+                                            <div className="text-xs text-slate-500">Available: {formatCurrency(user.available_balance || 0)}</div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-sm ${user.role === 'admin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>

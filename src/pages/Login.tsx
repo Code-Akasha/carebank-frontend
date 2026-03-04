@@ -33,8 +33,12 @@ export default function Login() {
                 navigate(from, { replace: true });
             }
         } catch (err) {
-            const _err = err as { response?: { data?: { detail?: string } } };
-            setError(_err.response?.data?.detail || 'Failed to login. Please check your credentials.');
+            const _err = err as { response?: { data?: { detail?: string } }; message?: string };
+            if (_err.response?.data?.detail) {
+                setError(_err.response.data.detail);
+            } else {
+                setError('Unable to reach backend server. Please ensure backend is running on http://localhost:8000.');
+            }
         } finally {
             setLoading(false);
         }
