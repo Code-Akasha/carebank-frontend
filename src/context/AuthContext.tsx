@@ -28,24 +28,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     useEffect(() => {
         const initAuth = async () => {
             const storedToken = localStorage.getItem('token');
-            if (storedToken) {
+            if (storedToken && storedToken.split('.').length === 3) {
                 try {
-                    // Check expiration
                     const decoded = jwtDecode<{ exp?: number }>(storedToken);
                     if (typeof decoded.exp !== 'number' || decoded.exp * 1000 < Date.now()) {
-                        throw new Error('Token expired or invalid');
+                        throw new Error('Token expired');
                     }
-
                     setToken(storedToken);
-                    // Fetch current user details
                     const response = await api.get('/api/auth/me');
                     setUser(response.data);
                 } catch (error) {
-                    console.error('Auth initialization failed', error);
+                    console.warn('Auth initialization failed, clearing token:', error);
                     localStorage.removeItem('token');
+                    localStorage.removeItem('user');
                     setToken(null);
                     setUser(null);
                 }
+            } else if (storedToken) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
             }
             setIsLoading(false);
         };
