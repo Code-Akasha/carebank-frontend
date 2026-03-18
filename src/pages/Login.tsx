@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
-import { Shield } from 'lucide-react';
+import { Shield, UserRoundPlus } from 'lucide-react';
 
 export default function Login() {
+    const [mode, setMode] = useState<'login' | 'register'>('login');
+    const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -21,7 +23,13 @@ export default function Login() {
         setLoading(true);
 
         try {
-            const response = await api.post('/api/auth/login', { email, password });
+            const response = mode === 'login'
+                ? await api.post('/api/auth/login', { email, password })
+                : await api.post('/api/auth/register', {
+                    email,
+                    password,
+                    full_name: fullName.trim(),
+                });
             const { access_token, user_id, role, full_name } = response.data;
 
             login(access_token, { user_id, email, role, full_name });
@@ -33,11 +41,15 @@ export default function Login() {
                 navigate(from, { replace: true });
             }
         } catch (err) {
-            const _err = err as { response?: { data?: { detail?: string } }; message?: string };
+            const _err = err as { response?: { data?: { detail?: string } }; code?: string; message?: string };
             if (_err.response?.data?.detail) {
                 setError(_err.response.data.detail);
+            } else if (err instanceof TypeError && _err.message?.includes('URL')) {
+                setError('API configuration error. Please restart the development server.');
+            } else if (_err.code === 'ERR_NETWORK' || _err.message?.includes('Network Error')) {
+                setError('Cannot connect to backend server. Please ensure it is running on http://localhost:8000.');
             } else {
-                setError('Unable to reach backend server. Please ensure backend is running on http://localhost:8000.');
+                setError('An unexpected error occurred. Please try again.');
             }
         } finally {
             setLoading(false);
@@ -55,13 +67,55 @@ export default function Login() {
                     </div>
 
                     <h2 className="text-2xl font-bold text-center text-slate-900 mb-2">
-                        Welcome to CareBank
+                        {mode === 'login' ? 'Welcome to CareBank' : 'Create CareBank Account'}
                     </h2>
                     <p className="text-center text-slate-500 mb-8">
-                        Please sign in to your account
+                        {mode === 'login' ? 'Please sign in to your account' : 'Register and start testing all integrated flows'}
                     </p>
 
+                    <div className="grid grid-cols-2 gap-2 mb-6 rounded-xl bg-slate-100 p-1">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setMode('login');
+                                setError('');
+                            }}
+                            className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${mode === 'login' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                                }`}
+                        >
+                            Sign In
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setMode('register');
+                                setError('');
+                            }}
+                            className={`inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition ${mode === 'register' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                                }`}
+                        >
+                            <UserRoundPlus className="w-4 h-4" />
+                            Register
+                        </button>
+                    </div>
+
                     <form onSubmit={handleSubmit} className="space-y-6">
+                        {mode === 'register' && (
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">
+                                    Full Name
+                                </label>
+                                <input
+                                    type="text"
+                                    value={fullName}
+                                    onChange={(e) => setFullName(e.target.value)}
+                                    required={mode === 'register'}
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                    placeholder="Your name"
+                                />
+                            </div>
+                        )}
+
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-2">
                                 Email Address
@@ -104,7 +158,7 @@ export default function Login() {
                             {loading ? (
                                 <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                             ) : (
-                                'Sign In'
+                                mode === 'login' ? 'Sign In' : 'Create Account'
                             )}
                         </button>
                     </form>
