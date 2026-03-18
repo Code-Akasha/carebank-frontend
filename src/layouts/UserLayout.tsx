@@ -5,6 +5,7 @@ import {
     WalletCards,
     LineChart,
     MessageSquare,
+    Workflow,
     LogOut,
     User as UserIcon,
     ShoppingBag
@@ -26,6 +27,7 @@ export default function UserLayout() {
         { path: '/simulator', label: 'Simulator', icon: LineChart },
         { path: '/products', label: 'Products', icon: ShoppingBag },
         { path: '/chat', label: 'Agent Chat', icon: MessageSquare },
+        { path: '/integration', label: 'Integration Lab', icon: Workflow },
     ];
 
     return (

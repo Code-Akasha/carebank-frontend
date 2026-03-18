@@ -8,6 +8,7 @@ import Simulator from "./pages/Simulator";
 import Products from "./pages/Products";
 import Accounts from "./pages/Accounts";
 import Chat from "./pages/Chat";
+import IntegrationLab from "./pages/IntegrationLab";
 import AdminLayout from "./layouts/AdminLayout";
 import AdminOverview from "./pages/admin/AdminOverview";
 import AdminUsers from "./pages/admin/AdminUsers";
@@ -29,6 +30,7 @@ export default function App() {
             <Route path="products" element={<Products />} />
             <Route path="accounts" element={<Accounts />} />
             <Route path="chat" element={<Chat />} />
+            <Route path="integration" element={<IntegrationLab />} />
           </Route>
 
           {/* Admin Protected Routes */}
