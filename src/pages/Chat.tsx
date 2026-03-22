@@ -8,7 +8,19 @@ interface Message {
     sender: "user" | "agent";
     content: string;
     timestamp: Date;
+    uiActions?: UIAction[];
 }
+
+interface UIAction {
+    label: string;
+    message: string;
+}
+
+const isUIAction = (value: unknown): value is UIAction => {
+    if (!value || typeof value !== "object") return false;
+    const record = value as Record<string, unknown>;
+    return typeof record.label === "string" && typeof record.message === "string";
+};
 
 export default function Chat() {
     const { user } = useAuth();
@@ -32,19 +44,18 @@ export default function Chat() {
         scrollToBottom();
     }, [messages]);
 
-    const handleSend = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!input.trim()) return;
+    const sendMessage = async (content: string) => {
+        const trimmed = content.trim();
+        if (!trimmed) return;
 
         const userMessage: Message = {
             id: Date.now().toString(),
             sender: "user",
-            content: input.trim(),
+            content: trimmed,
             timestamp: new Date()
         };
 
         setMessages(prev => [...prev, userMessage]);
-        setInput("");
         setLoading(true);
 
         try {
@@ -54,11 +65,17 @@ export default function Chat() {
                 thread_id: user?.user_id || "default"
             });
 
+            const rawActions = response.data?.ui_actions;
+            const uiActions: UIAction[] = Array.isArray(rawActions)
+                ? rawActions.filter(isUIAction)
+                : [];
+
             const agentMessage: Message = {
                 id: (Date.now() + 1).toString(),
                 sender: "agent",
                 content: response.data.response,
-                timestamp: new Date()
+                timestamp: new Date(),
+                uiActions
             };
 
             setMessages(prev => [...prev, agentMessage]);
@@ -74,6 +91,14 @@ export default function Chat() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleSend = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (loading) return;
+        const content = input;
+        setInput("");
+        await sendMessage(content);
     };
 
     return (
@@ -109,6 +134,25 @@ export default function Chat() {
                             : 'bg-slate-100 text-slate-800 rounded-tl-none'
                             }`}>
                             <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                            {msg.sender === "agent" && msg.uiActions && msg.uiActions.length > 0 && (
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                    {msg.uiActions.map((action, idx) => (
+                                        <button
+                                            key={`${msg.id}-action-${idx}`}
+                                            type="button"
+                                            disabled={loading}
+                                            onClick={() => sendMessage(action.message)}
+                                            className={
+                                                idx === 0
+                                                    ? "px-3 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg disabled:bg-slate-300 disabled:cursor-not-allowed transition-colors"
+                                                    : "px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                            }
+                                        >
+                                            {action.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                             <p className={`text-[10px] mt-2 ${msg.sender === 'user' ? 'text-blue-200' : 'text-slate-400'}`}>
                                 {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </p>
