@@ -5,11 +5,10 @@ import { ArrowDownLeft, ArrowUpRight, X, Loader2 } from 'lucide-react';
 interface TransactionModalProps {
     isOpen: boolean;
     onClose: () => void;
-    accountId: string;
     onSuccess: () => void;
 }
 
-export function TransactionModal({ isOpen, onClose, accountId, onSuccess }: TransactionModalProps) {
+export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModalProps) {
     const [type, setType] = useState<'deposit' | 'withdrawal'>('deposit');
     const [amount, setAmount] = useState('');
     const [description, setDescription] = useState('');
@@ -31,12 +30,15 @@ export function TransactionModal({ isOpen, onClose, accountId, onSuccess }: Tran
 
         setLoading(true);
 
+        const normalizedAmount = type === 'withdrawal' ? -Math.abs(parsedAmount) : Math.abs(parsedAmount);
+        const merchantLabel = type === 'deposit' ? 'Manual Deposit' : 'Manual Withdrawal';
+
         try {
             await api.post('/api/transactions/trigger', {
-                account_id: accountId,
-                amount: parsedAmount,
-                type: type,
-                description: description || (type === 'deposit' ? 'Manual Deposit' : 'Manual Withdrawal')
+                amount: normalizedAmount,
+                merchant: merchantLabel,
+                category: 'manual',
+                description: description || merchantLabel,
             });
 
             onSuccess();

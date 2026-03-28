@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { api } from "../lib/api";
-import { useAuth } from "../context/AuthContext";
 import {
     TrendingDown, TrendingUp, AlertTriangle, CheckCircle,
     Zap, ChevronRight, Loader2
@@ -37,7 +36,6 @@ const RISK_CONFIG = {
 };
 
 export default function Simulator() {
-    const { user } = useAuth();
     const [amount, setAmount] = useState("");
     const [category, setCategory] = useState("general");
     const [description, setDescription] = useState("");
@@ -55,7 +53,6 @@ export default function Simulator() {
         setResult(null);
         try {
             const res = await api.post("/api/simulate", {
-                user_id: user?.user_id,
                 expense_amount: Number(amount),
                 category,
                 description: description || `${category} expense`,

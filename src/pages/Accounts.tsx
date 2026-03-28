@@ -5,7 +5,6 @@ import { WalletCards, Plus, ArrowRightLeft, CreditCard, Landmark } from "lucide-
 
 interface Account {
     account_id: string;
-    account_number: string;
     account_type: "checking" | "savings" | "credit_card";
     name: string;
     current_balance: number;
@@ -86,7 +85,7 @@ export default function Accounts() {
 
                             <h3 className="text-lg font-bold text-slate-900 mb-1">{account.name}</h3>
                             <p className="text-sm font-mono text-slate-500 mb-4">
-                                {account.institution} • ****{account.mask || account.account_number?.slice(-4)}
+                                {account.institution}{account.mask ? ` • ****${account.mask}` : ''}
                             </p>
 
                             <div className="space-y-1">
@@ -130,7 +129,6 @@ export default function Accounts() {
             <TransactionModal
                 isOpen={!!selectedAccountId}
                 onClose={() => setSelectedAccountId(null)}
-                accountId={selectedAccountId || ''}
                 onSuccess={() => {
                     fetchAccounts();
                 }}

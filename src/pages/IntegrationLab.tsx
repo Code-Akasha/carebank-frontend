@@ -418,7 +418,7 @@ export default function IntegrationLab() {
         if (failed.length) {
             pushNotice(
                 "error",
-                `Loaded with ${failed.length} section error(s). Check backend/mockbank runtime.`,
+                `Loaded with ${failed.length} section error(s). Check backend runtime.`,
             );
         }
     };
@@ -777,7 +777,7 @@ export default function IntegrationLab() {
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900">Integration Lab</h1>
                     <p className="mt-1 text-sm text-slate-500">
-                        Test profile, planning, beneficiaries, schedules, settlements, actions, approvals, and reconciliation against live backend+mockbank.
+                        Test profile, planning, beneficiaries, schedules, settlements, actions, approvals, and reconciliation against the live backend.
                     </p>
                 </div>
                 <button
