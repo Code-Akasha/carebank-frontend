@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { Shield, UserRoundPlus } from 'lucide-react';
+import { MPINSetup } from '../components/MPINSetup';
 
 export default function Login() {
     const [mode, setMode] = useState<'login' | 'register'>('login');
@@ -11,6 +12,8 @@ export default function Login() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showMpinSetup, setShowMpinSetup] = useState(false);
+    const [redirectRole, setRedirectRole] = useState('user');
     const navigate = useNavigate();
     const location = useLocation();
     const { login } = useAuth();
@@ -33,8 +36,13 @@ export default function Login() {
             const { access_token, user_id, role, full_name } = response.data;
 
             login(access_token, { user_id, email, role, full_name });
+            setRedirectRole(role || 'user');
 
-            // Redirect based on role logic
+            if (mode === 'register') {
+                setShowMpinSetup(true);
+                return;
+            }
+
             if (role === 'admin') {
                 navigate('/admin', { replace: true });
             } else {
@@ -163,13 +171,20 @@ export default function Login() {
                         </button>
                     </form>
 
-                    {import.meta.env.VITE_SHOW_DEMO_CREDENTIALS === 'true' && (
-                        <div className="mt-8 pt-6 border-t border-slate-100 text-center text-sm text-slate-500">
-                            For demo purposes, use <strong className="text-slate-700">user001@carebank.demo</strong> with <strong className="text-slate-700">CareBank001!</strong>
-                        </div>
-                    )}
                 </div>
             </div>
+            {showMpinSetup && (
+                <MPINSetup
+                    onComplete={() => {
+                        setShowMpinSetup(false);
+                        if (redirectRole === 'admin') {
+                            navigate('/admin', { replace: true });
+                        } else {
+                            navigate(from, { replace: true });
+                        }
+                    }}
+                />
+            )}
         </div>
     );
 }

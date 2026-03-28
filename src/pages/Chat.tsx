@@ -61,8 +61,6 @@ export default function Chat() {
         try {
             const response = await api.post("/api/chat", {
                 message: userMessage.content,
-                user_id: user?.user_id,
-                thread_id: user?.user_id || "default"
             });
 
             const rawActions = response.data?.ui_actions;

@@ -54,24 +54,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             try {
                 const response = await api.get('/api/auth/me');
                 setUser(response.data);
-            } catch (error) {
-                const isNetworkError =
-                    error instanceof TypeError ||
-                    (error && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'ERR_NETWORK');
-
-                if (isNetworkError) {
-                    // Backend not reachable yet — keep token, user can retry
-                    const stored = localStorage.getItem('user');
-                    if (stored) {
-                        try { setUser(JSON.parse(stored)); } catch { /* ignore */ }
-                    }
-                } else {
-                    // Auth rejected (401, invalid token, etc.) — clear session
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    setToken(null);
-                    setUser(null);
-                }
+            } catch {
+                // Require a successful backend auth check for session restore.
+                logout();
             }
             setIsLoading(false);
         };
@@ -91,7 +76,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const login = (newToken: string, newUser: User) => {
         localStorage.setItem('token', newToken);
-        localStorage.setItem('user', JSON.stringify(newUser));
         setToken(newToken);
         setUser(newUser);
     };
