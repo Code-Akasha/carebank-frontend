@@ -15,10 +15,28 @@ interface Account {
     institution: string;
 }
 
+interface OpenAccountDraft {
+    name: string;
+    account_type: "checking" | "savings" | "credit_card";
+    initial_deposit: string;
+}
+
+const DEFAULT_OPEN_ACCOUNT_DRAFT: OpenAccountDraft = {
+    name: "",
+    account_type: "savings",
+    initial_deposit: "0",
+};
+
 export default function Accounts() {
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+    const [showOpenAccountModal, setShowOpenAccountModal] = useState(false);
+    const [openAccountDraft, setOpenAccountDraft] = useState<OpenAccountDraft>(
+        DEFAULT_OPEN_ACCOUNT_DRAFT,
+    );
+    const [creatingAccount, setCreatingAccount] = useState(false);
+    const [openAccountError, setOpenAccountError] = useState("");
 
     const fetchAccounts = async () => {
         try {
@@ -34,6 +52,43 @@ export default function Accounts() {
     useEffect(() => {
         fetchAccounts();
     }, []);
+
+    const handleOpenAccount = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setOpenAccountError("");
+
+        const initialDeposit = Number(openAccountDraft.initial_deposit || "0");
+        if (Number.isNaN(initialDeposit) || initialDeposit < 0) {
+            setOpenAccountError("Initial deposit must be a valid non-negative number.");
+            return;
+        }
+
+        setCreatingAccount(true);
+        try {
+            await api.post("/api/accounts/", {
+                account_type: openAccountDraft.account_type,
+                name:
+                    openAccountDraft.name.trim() ||
+                    `${openAccountDraft.account_type} account`,
+                initial_deposit: initialDeposit,
+            });
+            setShowOpenAccountModal(false);
+            setOpenAccountDraft(DEFAULT_OPEN_ACCOUNT_DRAFT);
+            await fetchAccounts();
+        } catch (err) {
+            const _err = err as {
+                response?: { data?: { detail?: string } };
+                message?: string;
+            };
+            setOpenAccountError(
+                _err.response?.data?.detail ||
+                    _err.message ||
+                    "Unable to open account right now.",
+            );
+        } finally {
+            setCreatingAccount(false);
+        }
+    };
 
     const getAccountIcon = (type: string) => {
         switch (type) {
@@ -63,7 +118,13 @@ export default function Accounts() {
         <div className="space-y-6 max-w-5xl mx-auto">
             <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight text-slate-900">Your Accounts</h1>
-                <button className="bg-slate-900 text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center space-x-2 hover:bg-slate-800 transition-colors">
+                <button
+                    onClick={() => {
+                        setOpenAccountError("");
+                        setShowOpenAccountModal(true);
+                    }}
+                    className="bg-slate-900 text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center space-x-2 hover:bg-slate-800 transition-colors"
+                >
                     <Plus className="w-4 h-4" />
                     <span>Open Account</span>
                 </button>
@@ -133,6 +194,108 @@ export default function Accounts() {
                     fetchAccounts();
                 }}
             />
+
+            {showOpenAccountModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+                    <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-xl">
+                        <h2 className="text-xl font-bold text-slate-900">Open New Account</h2>
+                        <p className="mt-1 text-sm text-slate-500">
+                            Create a new mock account for testing deposits, withdrawals, and payment flows.
+                        </p>
+
+                        <form onSubmit={handleOpenAccount} className="mt-5 space-y-4">
+                            <div>
+                                <label className="mb-2 block text-sm font-medium text-slate-700">
+                                    Account Name
+                                </label>
+                                <input
+                                    value={openAccountDraft.name}
+                                    onChange={(e) =>
+                                        setOpenAccountDraft((prev) => ({
+                                            ...prev,
+                                            name: e.target.value,
+                                        }))
+                                    }
+                                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm"
+                                    placeholder="Emergency Fund"
+                                />
+                            </div>
+
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <div>
+                                    <label className="mb-2 block text-sm font-medium text-slate-700">
+                                        Account Type
+                                    </label>
+                                    <select
+                                        value={openAccountDraft.account_type}
+                                        onChange={(e) =>
+                                            setOpenAccountDraft((prev) => ({
+                                                ...prev,
+                                                account_type: e.target.value as
+                                                    | "checking"
+                                                    | "savings"
+                                                    | "credit_card",
+                                            }))
+                                        }
+                                        className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm"
+                                    >
+                                        <option value="savings">Savings</option>
+                                        <option value="checking">Checking</option>
+                                        <option value="credit_card">Credit Card</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="mb-2 block text-sm font-medium text-slate-700">
+                                        Initial Deposit (INR)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value={openAccountDraft.initial_deposit}
+                                        onChange={(e) =>
+                                            setOpenAccountDraft((prev) => ({
+                                                ...prev,
+                                                initial_deposit: e.target.value,
+                                            }))
+                                        }
+                                        className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm"
+                                    />
+                                </div>
+                            </div>
+
+                            {openAccountError && (
+                                <div className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700">
+                                    {openAccountError}
+                                </div>
+                            )}
+
+                            <div className="flex justify-end gap-3 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (!creatingAccount) {
+                                            setShowOpenAccountModal(false);
+                                            setOpenAccountError("");
+                                        }
+                                    }}
+                                    className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={creatingAccount}
+                                    className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                                >
+                                    {creatingAccount ? "Opening..." : "Open Account"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
