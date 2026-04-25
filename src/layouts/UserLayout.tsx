@@ -8,7 +8,10 @@ import {
     Workflow,
     LogOut,
     User as UserIcon,
-    ShoppingBag
+    ShoppingBag,
+    PieChart,
+    Target,
+    Receipt
 } from 'lucide-react';
 
 export default function UserLayout() {
@@ -24,6 +27,9 @@ export default function UserLayout() {
     const navItems = [
         { path: '/', label: 'Dashboard', icon: LayoutDashboard },
         { path: '/accounts', label: 'Accounts', icon: WalletCards },
+        { path: '/analytics', label: 'Analytics', icon: PieChart },
+        { path: '/planning', label: 'Planning', icon: Target },
+        { path: '/bills', label: 'Bill Discovery', icon: Receipt },
         { path: '/simulator', label: 'Simulator', icon: LineChart },
         { path: '/products', label: 'Products', icon: ShoppingBag },
         { path: '/chat', label: 'Agent Chat', icon: MessageSquare },
