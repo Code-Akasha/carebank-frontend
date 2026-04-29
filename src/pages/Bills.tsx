@@ -1,7 +1,20 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Receipt, Calendar, CreditCard, ChevronRight, AlertCircle, Plus } from 'lucide-react';
+import { api } from '../lib/api';
 
-interface MockBill {
+interface BillCandidate {
+    source_type: string;
+    source_id: number;
+    recurring_rule_id?: number | null;
+    title: string;
+    category?: string | null;
+    amount?: number | null;
+    due_date: string;
+    action_type: string;
+    metadata?: Record<string, unknown> | null;
+}
+
+interface BillItem {
     id: string;
     biller: string;
     amount: number;
@@ -11,38 +24,53 @@ interface MockBill {
     autoPay: boolean;
 }
 
-const mockBills: MockBill[] = [
-    {
-        id: '1',
-        biller: 'City Electricity Board',
-        amount: 850.00,
-        dueDate: '2026-05-02',
-        status: 'upcoming',
-        category: 'Utilities',
-        autoPay: true
-    },
-    {
-        id: '2',
-        biller: 'FiberNet Telecom',
-        amount: 1200.00,
-        dueDate: '2026-05-05',
-        status: 'upcoming',
-        category: 'Internet',
-        autoPay: true
-    },
-    {
-        id: '3',
-        biller: 'Water Authority',
-        amount: 320.00,
-        dueDate: '2026-04-20',
-        status: 'paid',
-        category: 'Utilities',
-        autoPay: false
-    }
-];
-
 export default function Bills() {
-    const [bills] = useState<MockBill[]>(mockBills);
+    const [bills, setBills] = useState<BillItem[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    const fetchBills = async () => {
+        try {
+            setLoading(true);
+            setError('');
+            const res = await api.get('/api/bills/discover', {
+                params: {
+                    action_type: 'pay_bill',
+                    limit: 12,
+                }
+            });
+            const rawCandidates: BillCandidate[] = Array.isArray(res.data)
+                ? res.data
+                : (res.data?.candidates || []);
+
+            const today = new Date();
+            const mapped = rawCandidates.map((candidate) => {
+                const dueDate = candidate.due_date || '';
+                const dueDateValue = dueDate ? new Date(dueDate) : null;
+                const isOverdue = dueDateValue ? dueDateValue < today : false;
+                const category = (candidate.category || 'Utilities').toString();
+                return {
+                    id: `${candidate.source_type}:${candidate.source_id}`,
+                    biller: candidate.title || 'Bill Payment',
+                    amount: Number(candidate.amount || 0),
+                    dueDate: dueDate,
+                    status: isOverdue ? 'overdue' : 'upcoming',
+                    category: category.charAt(0).toUpperCase() + category.slice(1),
+                    autoPay: candidate.source_type === 'recurring_rule'
+                } as BillItem;
+            });
+
+            setBills(mapped);
+        } catch (err: any) {
+            setError(err.message || 'Failed to load bill discovery data');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchBills();
+    }, []);
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('en-IN', {
@@ -51,6 +79,10 @@ export default function Bills() {
         }).format(amount);
     };
 
+    const autoPayTotal = useMemo(() => {
+        return bills.reduce((sum, bill) => sum + (bill.autoPay ? bill.amount : 0), 0);
+    }, [bills]);
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -58,11 +90,22 @@ export default function Bills() {
                     <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Bill Discovery</h1>
                     <p className="text-sm text-slate-600 mt-1">Manage and discover recurring payments.</p>
                 </div>
-                <button className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors">
+                <button
+                    onClick={fetchBills}
+                    disabled={loading}
+                    className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-60"
+                >
                     <Plus className="w-4 h-4" />
-                    <span>Discover Bills</span>
+                    <span>{loading ? 'Refreshing...' : 'Discover Bills'}</span>
                 </button>
             </div>
+
+            {error && (
+                <div className="bg-red-50 text-red-600 p-4 rounded-xl border border-red-100 flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5" />
+                    {error}
+                </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm col-span-2">
@@ -71,8 +114,11 @@ export default function Bills() {
                         Upcoming & Recent Bills
                     </h2>
                     
-                    <div className="space-y-4">
-                        {bills.map(bill => (
+                    {loading ? (
+                        <div className="p-8 text-center text-slate-500">Loading bills...</div>
+                    ) : (
+                        <div className="space-y-4">
+                            {bills.map(bill => (
                             <div key={bill.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:border-slate-200 transition-colors bg-slate-50/50">
                                 <div className="flex items-center gap-4">
                                     <div className={`w-10 h-10 rounded-full flex items-center justify-center ${bill.status === 'paid' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
@@ -80,7 +126,9 @@ export default function Bills() {
                                     </div>
                                     <div>
                                         <div className="font-semibold text-slate-900">{bill.biller}</div>
-                                        <div className="text-xs text-slate-500">Due: {new Date(bill.dueDate).toLocaleDateString()} • {bill.category}</div>
+                                        <div className="text-xs text-slate-500">
+                                            Due: {bill.dueDate ? new Date(bill.dueDate).toLocaleDateString() : 'TBD'} • {bill.category}
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="text-right">
@@ -92,8 +140,14 @@ export default function Bills() {
                                     </div>
                                 </div>
                             </div>
-                        ))}
-                    </div>
+                            ))}
+                            {bills.length === 0 && (
+                                <div className="p-8 text-center text-slate-500">
+                                    No upcoming bills found yet.
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 <div className="space-y-6">
@@ -102,7 +156,7 @@ export default function Bills() {
                             <CreditCard className="w-24 h-24" />
                         </div>
                         <h3 className="font-medium text-indigo-100 mb-1">Auto-Pay Active</h3>
-                        <div className="text-3xl font-bold mb-4">{formatCurrency(2050)}</div>
+                        <div className="text-3xl font-bold mb-4">{formatCurrency(autoPayTotal)}</div>
                         <p className="text-sm text-indigo-100/80 mb-6">Estimated upcoming auto-debits for the next 30 days.</p>
                         <button className="w-full bg-white/20 hover:bg-white/30 text-white py-2 rounded-xl text-sm font-medium transition-colors backdrop-blur-sm">
                             Manage Auto-Pay

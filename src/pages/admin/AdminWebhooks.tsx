@@ -20,35 +20,15 @@ export default function AdminWebhooks() {
     const fetchDeadLetters = async () => {
         try {
             setLoading(true);
-            // This endpoint exists in mockbank, we will proxy it or call it directly.
-            // For now, simulating the response since it requires the mockbank URL.
-            // Replace with actual API call when proxy is setup:
-            // const res = await api.get('/api/admin/webhooks/dead-letter');
-            
-            // Mocking data for UI:
-            setTimeout(() => {
-                setDeadLetters([
-                    {
-                        id: 'dl_1',
-                        event_type: 'transaction.settled',
-                        payload: { transaction_id: 'txn_999' },
-                        failed_at: new Date(Date.now() - 3600000).toISOString(),
-                        attempts: 3,
-                        last_error: 'Connection timeout after 5000ms'
-                    },
-                    {
-                        id: 'dl_2',
-                        event_type: 'account.created',
-                        payload: { account_id: 'acc_888' },
-                        failed_at: new Date(Date.now() - 86400000).toISOString(),
-                        attempts: 5,
-                        last_error: 'HTTP 502 Bad Gateway'
-                    }
-                ]);
-                setLoading(false);
-            }, 800);
+            setError('');
+            const res = await api.get('/api/admin/webhooks/dead-letter');
+            const records = Array.isArray(res.data)
+                ? res.data
+                : (res.data?.records || []);
+            setDeadLetters(records);
         } catch (err: any) {
             setError(err.message || 'Failed to load dead letters');
+        } finally {
             setLoading(false);
         }
     };
@@ -60,8 +40,7 @@ export default function AdminWebhooks() {
     const handleReplay = async (id: string) => {
         setReplaying(id);
         try {
-            // await api.post(`/api/admin/webhooks/dead-letter/${id}/replay`);
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await api.post(`/api/admin/webhooks/dead-letter/${id}/replay`);
             setDeadLetters(prev => prev.filter(dl => dl.id !== id));
         } catch (err) {
             alert('Failed to replay webhook');
