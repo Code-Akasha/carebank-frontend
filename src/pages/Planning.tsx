@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Target, TrendingUp, AlertCircle, PlusCircle, Calendar } from 'lucide-react';
-import { apiClient } from '../api/client';
+import { api } from '../lib/api';
 
 interface SavingsGoal {
   id: string;
@@ -34,8 +34,8 @@ export default function Planning() {
       setLoading(true);
       // We will create the planning API next
       const [goalsRes, forecastRes] = await Promise.all([
-        apiClient.get('/api/planning/plans').catch(() => ({ data: [] })),
-        apiClient.get('/api/planning/forecast').catch(() => ({ data: null }))
+        api.get('/api/planning/plans').catch(() => ({ data: [] })),
+        api.get('/api/planning/forecast').catch(() => ({ data: null }))
       ]);
       setGoals(goalsRes.data || []);
       setForecast(forecastRes.data);

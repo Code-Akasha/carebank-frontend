@@ -3,7 +3,7 @@ import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer 
 } from 'recharts';
 import { CreditCard, TrendingUp, AlertCircle, Calendar } from 'lucide-react';
-import { apiClient } from '../api/client';
+import { api } from '../lib/api';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#64748b'];
 
@@ -28,7 +28,7 @@ export default function Analytics() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await apiClient.get('/api/transactions?limit=100');
+      const res = await api.get('/api/transactions?limit=100');
       if (res.data && Array.isArray(res.data.transactions)) {
         setTransactions(res.data.transactions);
       }
