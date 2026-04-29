@@ -3,6 +3,9 @@
 ## Overview
 Update the frontend application to incorporate authentication (Login/Registration flows), session persistence, and API interceptors. Most importantly, build out the Admin Observability Dashboard to display real-time metrics, system health, risk flags, and an immutable log of agent actions to prove operational transparency.
 
+## Status Update (2026-04-29)
+- Fixed API client import paths and wired Bills discovery + Admin Webhooks to backend endpoints.
+
 ## Project Type
 **WEB**
 
