@@ -7,7 +7,8 @@ import {
     PlayCircle,
     LogOut,
     ShieldAlert,
-    Webhook
+    Webhook,
+    Zap
 } from 'lucide-react';
 
 export default function AdminLayout() {
@@ -25,6 +26,7 @@ export default function AdminLayout() {
         { path: '/admin/agents', icon: Activity, label: 'Agent Monitor' },
         { path: '/admin/simulation', icon: PlayCircle, label: 'Simulation' },
         { path: '/admin/webhooks', icon: Webhook, label: 'Webhooks' },
+        { path: '/admin/llm-config', icon: Zap, label: 'LLM Configuration' },
     ];
 
     return (

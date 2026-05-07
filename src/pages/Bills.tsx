@@ -31,6 +31,8 @@ interface BillItem {
 type ActionState = {
     status: 'idle' | 'loading' | 'success' | 'error';
     message?: string;
+    requestId?: number;
+    executionId?: number;
 };
 
 export default function Bills() {
@@ -139,6 +141,11 @@ export default function Bills() {
             updateActionState(bill.id, {
                 status: 'success',
                 message: `Action ${requestId}. ${status}`.trim(),
+                requestId: typeof request?.id === 'number' ? request.id : undefined,
+                executionId:
+                    typeof request?.linked_execution_id === 'number'
+                        ? request.linked_execution_id
+                        : undefined,
             });
         } catch (err: any) {
             const detail = err?.response?.data?.detail;
@@ -146,6 +153,54 @@ export default function Bills() {
                 ? detail
                 : 'Failed to create action request.';
             updateActionState(bill.id, { status: 'error', message });
+        }
+    };
+
+    const handleApprove = async (bill: BillItem) => {
+        const current = actionStates[bill.id];
+        if (!current?.requestId) {
+            updateActionState(bill.id, {
+                status: 'error',
+                message: 'No pending request found to approve.',
+            });
+            return;
+        }
+
+        updateActionState(bill.id, {
+            ...current,
+            status: 'loading',
+            message: 'Approving request...',
+        });
+
+        try {
+            const response = await api.post(
+                `/api/actions/requests/${current.requestId}/approve`,
+                { reason: 'Approved from bills page' },
+            );
+            const result = response.data ?? {};
+            const executionId =
+                typeof result?.execution?.id === 'number'
+                    ? result.execution.id
+                    : current.executionId;
+
+            updateActionState(bill.id, {
+                status: 'success',
+                requestId: current.requestId,
+                executionId,
+                message: executionId
+                    ? `Request approved. Execution ${executionId} started.`
+                    : 'Request approved successfully.',
+            });
+        } catch (err: any) {
+            const detail = err?.response?.data?.detail;
+            updateActionState(bill.id, {
+                ...current,
+                status: 'error',
+                message:
+                    typeof detail === 'string'
+                        ? detail
+                        : 'Failed to approve request.',
+            });
         }
     };
 
@@ -224,6 +279,17 @@ export default function Bills() {
                                         {actionState?.message && (
                                             <div className={`text-xs font-medium ${actionState.status === 'error' ? 'text-red-600' : 'text-emerald-600'}`}>
                                                 {actionState.message}
+                                            </div>
+                                        )}
+                                        {actionState?.requestId && !actionState?.executionId && (
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={() => handleApprove(bill)}
+                                                    disabled={actionState?.status === 'loading'}
+                                                    className="rounded bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-700 disabled:opacity-60"
+                                                >
+                                                    Approve Request
+                                                </button>
                                             </div>
                                         )}
                                     </div>

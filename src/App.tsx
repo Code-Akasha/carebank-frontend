@@ -20,6 +20,7 @@ import AdminUserDetail from "./pages/admin/AdminUserDetail";
 import AdminAgentMonitor from "./pages/admin/AdminAgentMonitor";
 import AdminSimulation from "./pages/admin/AdminSimulation";
 import AdminWebhooks from "./pages/admin/AdminWebhooks";
+import AdminLLMConfig from "./pages/admin/AdminLLMConfig";
 export default function App() {
   return (
     <ErrorBoundary>
@@ -50,6 +51,7 @@ export default function App() {
               <Route path="agents" element={<ErrorBoundary><AdminAgentMonitor /></ErrorBoundary>} />
               <Route path="simulation" element={<ErrorBoundary><AdminSimulation /></ErrorBoundary>} />
               <Route path="webhooks" element={<ErrorBoundary><AdminWebhooks /></ErrorBoundary>} />
+              <Route path="llm-config" element={<ErrorBoundary><AdminLLMConfig /></ErrorBoundary>} />
             </Route>
 
             {/* Fallback */}

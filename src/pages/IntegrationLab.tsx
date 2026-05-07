@@ -123,7 +123,7 @@ interface ActionRequest {
     decision_reason?: string | null;
     linked_execution_id?: number | null;
     created_at: string;
-    action_payload: Record<string, unknown>;
+    action_payload?: Record<string, unknown> | null;
 }
 
 interface ActionExecution {
@@ -135,6 +135,26 @@ interface ActionExecution {
     created_at: string;
     finished_at?: string | null;
     result_payload?: Record<string, unknown> | null;
+}
+
+function toNumber(value: unknown, fallback = 0): number {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function toArray<T>(value: unknown): T[] {
+    return Array.isArray(value) ? (value as T[]) : [];
+}
+
+function toRecord(value: unknown): Record<string, unknown> {
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+        return value as Record<string, unknown>;
+    }
+    return {};
+}
+
+function formatInr(value: unknown): string {
+    return toNumber(value, 0).toLocaleString("en-IN");
 }
 
 interface ProfileDraft {
@@ -353,15 +373,24 @@ export default function IntegrationLab() {
 
     const refreshProfile = async () => {
         const response = await api.get<UserProfileResponse>("/api/profile");
-        setProfile(response.data);
+        const data = response.data;
+        setProfile({
+            ...data,
+            monthly_salary: toNumber(data?.monthly_salary),
+            min_safe_balance: toNumber(data?.min_safe_balance, 5000),
+            savings_goal_pct: toNumber(data?.savings_goal_pct, 0.2),
+            persistent_expenses: toArray<PersistentExpense>(data?.persistent_expenses),
+            total_persistent_expenses: toNumber(data?.total_persistent_expenses),
+            projected_free_cashflow: toNumber(data?.projected_free_cashflow),
+        });
         setProfileDraft({
-            monthly_salary: String(response.data.monthly_salary ?? 0),
-            currency: response.data.currency || "INR",
-            min_safe_balance: String(response.data.min_safe_balance ?? 5000),
-            savings_goal_pct: String(response.data.savings_goal_pct ?? 0.2),
-            risk_tolerance: response.data.risk_tolerance || "moderate",
-            notes: response.data.notes || "",
-            persistent_expenses: response.data.persistent_expenses || [],
+            monthly_salary: String(toNumber(data?.monthly_salary)),
+            currency: data?.currency || "INR",
+            min_safe_balance: String(toNumber(data?.min_safe_balance, 5000)),
+            savings_goal_pct: String(toNumber(data?.savings_goal_pct, 0.2)),
+            risk_tolerance: data?.risk_tolerance || "moderate",
+            notes: data?.notes || "",
+            persistent_expenses: toArray<PersistentExpense>(data?.persistent_expenses),
         });
     };
 
@@ -371,14 +400,14 @@ export default function IntegrationLab() {
             api.get<RecurringRule[]>("/api/planning/recurring-rules"),
             api.get<ChecklistItem[]>("/api/planning/checklist"),
         ]);
-        setPlans(plansRes.data);
-        setRules(rulesRes.data);
-        setChecklist(checklistRes.data);
+        setPlans(toArray<FinancialPlan>(plansRes.data));
+        setRules(toArray<RecurringRule>(rulesRes.data));
+        setChecklist(toArray<ChecklistItem>(checklistRes.data));
     };
 
     const refreshBeneficiaries = async () => {
         const response = await api.get<Beneficiary[]>("/api/beneficiaries/");
-        setBeneficiaries(response.data);
+        setBeneficiaries(toArray<Beneficiary>(response.data));
     };
 
     const refreshSchedules = async () => {
@@ -390,8 +419,12 @@ export default function IntegrationLab() {
                 params: { include_inactive: true },
             }),
         ]);
-        setSettlementWindows(windowsRes.data);
-        setSchedules(schedulesRes.data);
+        const rails = toRecord((windowsRes.data as SettlementWindows | null)?.rails);
+        setSettlementWindows({
+            ...(windowsRes.data as SettlementWindows),
+            rails: rails as SettlementWindows["rails"],
+        });
+        setSchedules(toArray<BankSchedule>(schedulesRes.data));
     };
 
     const refreshActions = async () => {
@@ -399,8 +432,8 @@ export default function IntegrationLab() {
             api.get<ActionRequest[]>("/api/actions/requests"),
             api.get<ActionExecution[]>("/api/actions/executions"),
         ]);
-        setActionRequests(requestsRes.data);
-        setExecutions(executionsRes.data);
+        setActionRequests(toArray<ActionRequest>(requestsRes.data));
+        setExecutions(toArray<ActionExecution>(executionsRes.data));
     };
 
     const refreshAll = async () => {
@@ -903,7 +936,7 @@ export default function IntegrationLab() {
                                     className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-xs"
                                 >
                                     <span>
-                                        {expense.name} · INR {expense.amount.toLocaleString("en-IN")} · day {expense.day_of_month} · {expense.category}
+                                        {expense.name} · INR {formatInr(expense.amount)} · day {expense.day_of_month} · {expense.category}
                                     </span>
                                     <button
                                         type="button"
@@ -932,7 +965,7 @@ export default function IntegrationLab() {
 
                 {profile && (
                     <div className="mt-4 rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
-                        User {profile.user_id} · Total persistent expenses INR {profile.total_persistent_expenses.toLocaleString("en-IN")} · Projected free cashflow INR {profile.projected_free_cashflow.toLocaleString("en-IN")}
+                        User {profile.user_id} · Total persistent expenses INR {formatInr(profile.total_persistent_expenses)} · Projected free cashflow INR {formatInr(profile.projected_free_cashflow)}
                     </div>
                 )}
             </section>
@@ -1058,7 +1091,7 @@ export default function IntegrationLab() {
                         <div className="space-y-2 text-xs">
                             {rules.map((rule) => (
                                 <div key={rule.id} className="rounded-lg bg-slate-50 p-2">
-                                    {rule.title} · INR {rule.amount.toLocaleString("en-IN")} · day {rule.day_of_month} · next {rule.next_run_date} · {rule.trusted_recurring ? "trusted" : "manual"}
+                                    {rule.title} · INR {formatInr(rule.amount)} · day {rule.day_of_month} · next {rule.next_run_date} · {rule.trusted_recurring ? "trusted" : "manual"}
                                 </div>
                             ))}
                             {rules.length === 0 && <p className="text-slate-400">No rules yet.</p>}
@@ -1242,7 +1275,7 @@ export default function IntegrationLab() {
                             Settlement windows for {settlementWindows.date}
                         </p>
                         <div className="grid gap-2 md:grid-cols-2">
-                            {Object.entries(settlementWindows.rails).map(([rail, windowData]) => (
+                            {Object.entries(settlementWindows.rails ?? {}).map(([rail, windowData]) => (
                                 <div key={rail} className="rounded-lg bg-white p-2">
                                     <p className="font-semibold text-slate-800">{rail}</p>
                                     <p className="text-slate-600">Mode: {windowData.mode || "-"}</p>
@@ -1340,7 +1373,7 @@ export default function IntegrationLab() {
                         >
                             <div className="flex flex-wrap items-center justify-between gap-2">
                                 <span>
-                                    {schedule.id} · {schedule.action_type} · INR {schedule.amount.toLocaleString("en-IN")} · {schedule.status} · next {schedule.next_run_date}
+                                    {schedule.id} · {schedule.action_type} · INR {formatInr(schedule.amount)} · {schedule.status} · next {schedule.next_run_date}
                                 </span>
                                 <div className="flex items-center gap-2">
                                     <button
@@ -1451,7 +1484,7 @@ export default function IntegrationLab() {
                                         <span>{formatDate(request.created_at)}</span>
                                     </div>
                                     <p className="text-slate-500">
-                                        amount: {String(request.action_payload.amount ?? "-")}
+                                        amount: {String((request.action_payload ?? {}).amount ?? "-")}
                                     </p>
                                     {request.status === "pending" && (
                                         <div className="mt-2 flex items-center gap-2">

@@ -18,6 +18,11 @@ interface Transaction {
     description: string;
 }
 
+function safeNumber(value: unknown, fallback = 0): number {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 export default function Dashboard() {
     const { user } = useAuth();
     const [balance, setBalance] = useState<Balance | null>(null);
@@ -70,10 +75,10 @@ export default function Dashboard() {
                             <h2 className="text-sm font-medium uppercase tracking-wider">Total Balance</h2>
                         </div>
                         <p className="text-4xl font-bold tracking-tight mb-2">
-                            ₹ {balance?.available_balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            ₹ {safeNumber(balance?.available_balance).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </p>
                         <p className="text-blue-200 text-sm">
-                            Current Balance: ₹ {balance?.current_balance.toLocaleString('en-IN')}
+                            Current Balance: ₹ {safeNumber(balance?.current_balance).toLocaleString('en-IN')}
                         </p>
                     </div>
                 </div>

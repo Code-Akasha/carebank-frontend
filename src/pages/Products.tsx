@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
+import type { ElementType } from "react";
 import { api } from "../lib/api";
 import { ShieldCheck, TrendingUp, PiggyBank, CreditCard, CheckCircle, XCircle, Loader2 } from "lucide-react";
 
 interface Product {
-    id: number;
+    id: string;
     name: string;
     type: string;
     description: string;
@@ -17,11 +18,13 @@ interface Balance {
     current_balance: number;
 }
 
-const PRODUCT_ICONS: Record<string, React.ElementType> = {
+const PRODUCT_ICONS: Record<string, ElementType> = {
     savings_plan: PiggyBank,
     loan: TrendingUp,
     fixed_deposit: ShieldCheck,
     credit_card: CreditCard,
+    savings: PiggyBank,
+    credit: CreditCard,
 };
 
 const PRODUCT_COLORS: Record<string, string> = {
@@ -36,7 +39,60 @@ const TYPE_LABELS: Record<string, string> = {
     loan: "Personal Loan",
     fixed_deposit: "Fixed Deposit",
     credit_card: "Credit Card",
+    savings: "Savings",
+    credit: "Credit",
 };
+
+const FALLBACK_PRODUCTS: Product[] = [
+    {
+        id: "prod_savings_plus",
+        name: "Savings Plus",
+        type: "savings",
+        description: "High-yield savings for daily cash management.",
+        interest_rate: 4.5,
+        min_balance_required: 0,
+        eligibility_rules: { min_balance: 0 },
+        provider_id: "agentic_proxy",
+    },
+    {
+        id: "prod_credit_bridge",
+        name: "Credit Bridge",
+        type: "credit",
+        description: "Short-term bridge credit with transparent pricing.",
+        interest_rate: 12,
+        min_balance_required: 0,
+        eligibility_rules: { min_balance: 0 },
+        provider_id: "agentic_proxy",
+    },
+];
+
+function toNumber(value: unknown, fallback = 0): number {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function normalizeProduct(raw: unknown, index: number): Product {
+    const item = raw as Record<string, unknown>;
+    const type = String(item.type ?? item.category ?? "savings");
+    const id = String(item.id ?? `product_${index + 1}`);
+    const minBalance = toNumber(item.min_balance_required, 0);
+    const interestRate = toNumber(item.interest_rate, 0);
+    const eligibilityRules =
+        item.eligibility_rules && typeof item.eligibility_rules === "object"
+            ? (item.eligibility_rules as Record<string, number>)
+            : { min_balance: minBalance };
+
+    return {
+        id,
+        name: String(item.name ?? `Product ${index + 1}`),
+        type,
+        description: String(item.description ?? "No description provided."),
+        interest_rate: interestRate,
+        min_balance_required: minBalance,
+        eligibility_rules: eligibilityRules,
+        provider_id: String(item.provider_id ?? "agentic_proxy"),
+    };
+}
 
 export default function Products() {
     const [products, setProducts] = useState<Product[]>([]);
@@ -50,10 +106,13 @@ export default function Products() {
                     api.get("/api/products/"),
                     api.get("/api/balances/"),
                 ]);
-                setProducts(productsRes.data);
+                const rawProducts = Array.isArray(productsRes.data) ? productsRes.data : [];
+                const normalized = rawProducts.map(normalizeProduct);
+                setProducts(normalized.length ? normalized : FALLBACK_PRODUCTS);
                 setBalance(balanceRes.data);
             } catch (err) {
                 console.error("Failed to load products", err);
+                setProducts(FALLBACK_PRODUCTS);
             } finally {
                 setLoading(false);
             }
@@ -123,7 +182,7 @@ export default function Products() {
                                 <div className="flex justify-between text-sm">
                                     <span className="text-slate-500">Min. Balance</span>
                                     <span className="font-semibold text-slate-700">
-                                        ₹{product.min_balance_required.toLocaleString('en-IN')}
+                                        ₹{toNumber(product.min_balance_required).toLocaleString('en-IN')}
                                     </span>
                                 </div>
 
