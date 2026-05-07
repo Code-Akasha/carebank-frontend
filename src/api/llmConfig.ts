@@ -78,3 +78,30 @@ export interface ErrorResponse {
   message: string;
   remediation?: string;
 }
+
+export interface BankingConnectorConfig {
+  id: number;
+  environment: 'development' | 'staging' | 'production';
+  provider_type: string;
+  base_url: string;
+  secret_masked?: string;
+  request_timeout_sec: number;
+  is_active: boolean;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  last_connectivity_check?: string;
+  last_error?: string;
+}
+
+export interface BankingConnectorConfigCreate {
+  base_url: string;
+  secret?: string;
+  request_timeout_sec: number;
+}
+
+export interface BankingConnectorTestResponse {
+  status: 'ok' | 'error';
+  providers_count?: number;
+  error?: string;
+}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { AlertTriangle, CheckCircle, Settings, Zap, FileText } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Settings, Zap, FileText, Landmark } from 'lucide-react';
 import { api } from '../../lib/api';
+import type { BankingConnectorConfig, BankingConnectorTestResponse } from '../../api/llmConfig';
 
 interface LLMTunnelConfig {
   id: number;
@@ -32,7 +33,7 @@ interface AgentPromptConfig {
   notes?: string;
 }
 
-type TabType = 'connection' | 'models' | 'prompts';
+type TabType = 'connection' | 'models' | 'prompts' | 'banking';
 
 export default function AdminLLMConfig() {
   const [activeTab, setActiveTab] = useState<TabType>('connection');
@@ -120,6 +121,20 @@ export default function AdminLLMConfig() {
           <FileText className="w-4 h-4" />
           Prompts
         </button>
+        <button
+          onClick={() => {
+            setActiveTab('banking');
+            clearMessages();
+          }}
+          className={`px-4 py-3 font-semibold flex items-center gap-2 ${
+            activeTab === 'banking'
+              ? 'border-b-2 border-blue-600 text-blue-600'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <Landmark className="w-4 h-4" />
+          Banking Proxy
+        </button>
       </div>
 
       {/* Error/Success Messages */}
@@ -154,6 +169,13 @@ export default function AdminLLMConfig() {
         )}
         {activeTab === 'prompts' && (
           <PromptsPanel
+            environment={environment}
+            onError={setError}
+            onSuccess={setSuccess}
+          />
+        )}
+        {activeTab === 'banking' && (
+          <BankingProxyPanel
             environment={environment}
             onError={setError}
             onSuccess={setSuccess}
@@ -638,6 +660,153 @@ function PromptsPanel({
             )}
           </div>
         </>
+      )}
+    </div>
+  );
+}
+
+function BankingProxyPanel({
+  environment,
+  onError,
+  onSuccess,
+}: {
+  environment: string;
+  onError: (msg: string) => void;
+  onSuccess: (msg: string) => void;
+}) {
+  const [config, setConfig] = useState<BankingConnectorConfig | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    base_url: '',
+    secret: '',
+    request_timeout_sec: 10,
+  });
+
+  useEffect(() => {
+    loadConfig();
+  }, [environment]);
+
+  const loadConfig = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get(`/api/admin/banking/connector/${environment}`);
+      setConfig(response.data);
+      setFormData({
+        base_url: response.data.base_url || '',
+        secret: '',
+        request_timeout_sec: response.data.request_timeout_sec || 10,
+      });
+    } catch (error: any) {
+      onError(error.response?.data?.detail || 'Failed to load banking connector config');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveConfig = async () => {
+    if (!formData.base_url.trim()) {
+      onError('Banking base URL is required');
+      return;
+    }
+    setSaving(true);
+    try {
+      const response = await api.put(`/api/admin/banking/connector/${environment}`, formData);
+      setConfig(response.data);
+      setFormData((current) => ({ ...current, secret: '' }));
+      onSuccess('Banking connector updated successfully');
+    } catch (error: any) {
+      onError(error.response?.data?.detail || 'Failed to update banking connector');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const testConfig = async () => {
+    setSaving(true);
+    try {
+      const response = await api.post<BankingConnectorTestResponse>(
+        `/api/admin/banking/connector/${environment}/test`,
+        {}
+      );
+      if (response.data.status === 'ok') {
+        onSuccess(`Banking connector test passed. Providers: ${response.data.providers_count ?? 0}`);
+      } else {
+        onError(response.data.error || 'Banking connector test failed');
+      }
+    } catch (error: any) {
+      onError(error.response?.data?.detail || 'Banking connector test failed');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="text-center py-8 text-slate-500">Loading banking connector...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <label className="block text-sm font-semibold text-slate-700 mb-2">Mock Bank Base URL</label>
+        <input
+          type="text"
+          value={formData.base_url}
+          onChange={(e) => setFormData({ ...formData, base_url: e.target.value })}
+          placeholder="https://mockbank.example.com"
+          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-semibold text-slate-700 mb-2">Bank API Secret</label>
+        <input
+          type="password"
+          value={formData.secret}
+          onChange={(e) => setFormData({ ...formData, secret: e.target.value })}
+          placeholder="Leave blank to keep current secret"
+          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        {config?.secret_masked && (
+          <p className="text-sm text-slate-500 mt-1">Current secret: {config.secret_masked}</p>
+        )}
+      </div>
+      <div>
+        <label className="block text-sm font-semibold text-slate-700 mb-2">Request Timeout (seconds)</label>
+        <input
+          type="number"
+          min="3"
+          max="120"
+          value={formData.request_timeout_sec}
+          onChange={(e) => setFormData({ ...formData, request_timeout_sec: parseInt(e.target.value) })}
+          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div className="flex gap-4">
+        <button
+          onClick={saveConfig}
+          disabled={saving}
+          className="flex-1 bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 disabled:bg-slate-400"
+        >
+          {saving ? 'Saving...' : 'Save Banking Connector'}
+        </button>
+        <button
+          onClick={testConfig}
+          disabled={saving || !formData.base_url}
+          className="flex-1 bg-slate-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-slate-700 disabled:bg-slate-400"
+        >
+          {saving ? 'Testing...' : 'Test Banking Connector'}
+        </button>
+      </div>
+      {config && (
+        <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 text-sm text-slate-600">
+          <p><span className="font-semibold">Active:</span> {config.is_active ? 'Yes' : 'No'}</p>
+          {config.last_connectivity_check && (
+            <p><span className="font-semibold">Last Check:</span> {new Date(config.last_connectivity_check).toLocaleString()}</p>
+          )}
+          {config.last_error && (
+            <p><span className="font-semibold">Last Error:</span> <span className="text-red-600">{config.last_error}</span></p>
+          )}
+        </div>
       )}
     </div>
   );
