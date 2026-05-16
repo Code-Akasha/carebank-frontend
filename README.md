@@ -43,6 +43,19 @@ export default defineConfig([
 ])
 ```
 
+## Vercel Deployment
+
+This app is configured as a static Vite SPA for Vercel. The included `vercel.json` keeps client-side routes like `/admin` and `/login` working by rewriting all paths to `index.html`.
+
+Before deploying, set `VITE_API_BASE_URL` in the Vercel project environment variables so the frontend points at the correct backend URL.
+
+Suggested production flow:
+
+```bash
+npm run build
+vercel --prod
+```
+
 You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
 ```js
