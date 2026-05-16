@@ -145,7 +145,11 @@ export default function Analytics() {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <RechartsTooltip formatter={(value: number) => `₹${value.toLocaleString()}`} />
+                  <RechartsTooltip
+                    formatter={(value) =>
+                      typeof value === 'number' ? `₹${value.toLocaleString()}` : value
+                    }
+                  />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
@@ -171,8 +175,11 @@ export default function Analytics() {
                     tickLine={false}
                     tickFormatter={(value) => `₹${value}`}
                   />
-                  <RechartsTooltip 
-                    formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Spent']}
+                  <RechartsTooltip
+                    formatter={(value, name) => [
+                      typeof value === 'number' ? `₹${value.toLocaleString()}` : String(value ?? ''),
+                      name,
+                    ]}
                     cursor={{ fill: '#f8fafc' }}
                   />
                   <Bar dataKey="amount" fill="#3b82f6" radius={[4, 4, 0, 0]} />

@@ -38,7 +38,6 @@ type TabType = 'connection' | 'models' | 'prompts' | 'banking';
 export default function AdminLLMConfig() {
   const [activeTab, setActiveTab] = useState<TabType>('connection');
   const [environment, setEnvironment] = useState<string>('development');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
 
@@ -164,7 +163,6 @@ export default function AdminLLMConfig() {
           <ModelsPanel
             environment={environment}
             onError={setError}
-            onSuccess={setSuccess}
           />
         )}
         {activeTab === 'prompts' && (
@@ -420,11 +418,9 @@ function ConnectionSettingsPanel({
 function ModelsPanel({
   environment,
   onError,
-  onSuccess,
 }: {
   environment: string;
   onError: (msg: string) => void;
-  onSuccess: (msg: string) => void;
 }) {
   const [models, setModels] = useState<OllamaModel[]>([]);
   const [loading, setLoading] = useState(false);
@@ -514,7 +510,6 @@ function PromptsPanel({
   onSuccess: (msg: string) => void;
 }) {
   const [prompts, setPrompts] = useState<AgentPromptConfig[]>([]);
-  const [loading, setLoading] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<string>('');
   const [editingPrompt, setEditingPrompt] = useState<string>('');
   const [saving, setSaving] = useState(false);
@@ -524,7 +519,6 @@ function PromptsPanel({
   }, [environment]);
 
   const loadPrompts = async () => {
-    setLoading(true);
     try {
       const response = await api.get(
         `/api/admin/llm/prompts?agent=${selectedAgent}&environment=${environment}`
@@ -532,8 +526,6 @@ function PromptsPanel({
       setPrompts(response.data.prompts || []);
     } catch (error: any) {
       onError(error.response?.data?.detail || 'Failed to load prompts');
-    } finally {
-      setLoading(false);
     }
   };
 

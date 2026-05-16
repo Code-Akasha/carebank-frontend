@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Target, TrendingUp, AlertCircle, PlusCircle, Calendar, ClipboardList, ListChecks, CheckCircle2, Clock, XCircle, Loader2 } from 'lucide-react';
+import { Target, TrendingUp, AlertCircle, PlusCircle, ClipboardList, ListChecks, CheckCircle2, Clock, XCircle, Loader2 } from 'lucide-react';
 import { api } from '../lib/api';
 
 interface FinancialPlan {
@@ -181,15 +181,19 @@ export default function Planning() {
       return;
     }
 
-    const targetAmount = goalForm.target_amount.trim() ? Number(goalForm.target_amount) : null;
-    const monthlyBudget = goalForm.monthly_budget.trim() ? Number(goalForm.monthly_budget) : null;
+    const hasTargetAmount = goalForm.target_amount.trim() !== '';
+    const hasMonthlyBudget = goalForm.monthly_budget.trim() !== '';
+    const targetAmountInput = Number(goalForm.target_amount);
+    const monthlyBudgetInput = Number(goalForm.monthly_budget);
+    const targetAmount = hasTargetAmount ? targetAmountInput : null;
+    const monthlyBudget = hasMonthlyBudget ? monthlyBudgetInput : null;
 
-    if (goalForm.target_amount.trim() && (!Number.isFinite(targetAmount) || targetAmount < 0)) {
+    if (hasTargetAmount && (!Number.isFinite(targetAmountInput) || targetAmountInput < 0)) {
       setGoalError('Target amount must be a positive number.');
       return;
     }
 
-    if (goalForm.monthly_budget.trim() && (!Number.isFinite(monthlyBudget) || monthlyBudget < 0)) {
+    if (hasMonthlyBudget && (!Number.isFinite(monthlyBudgetInput) || monthlyBudgetInput < 0)) {
       setGoalError('Monthly budget must be a positive number.');
       return;
     }
