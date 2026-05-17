@@ -77,8 +77,8 @@ export default function Bills() {
             });
 
             setBills(mapped);
-        } catch (err: any) {
-            setError(err.message || 'Failed to load bill discovery data');
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Failed to load bill discovery data');
         } finally {
             setLoading(false);
         }
@@ -147,8 +147,9 @@ export default function Bills() {
                         ? request.linked_execution_id
                         : undefined,
             });
-        } catch (err: any) {
-            const detail = err?.response?.data?.detail;
+        } catch (err: unknown) {
+            const axiosErr = err as { response?: { data?: { detail?: string } } };
+            const detail = axiosErr.response?.data?.detail;
             const message = typeof detail === 'string'
                 ? detail
                 : 'Failed to create action request.';
@@ -191,8 +192,9 @@ export default function Bills() {
                     ? `Request approved. Execution ${executionId} started.`
                     : 'Request approved successfully.',
             });
-        } catch (err: any) {
-            const detail = err?.response?.data?.detail;
+        } catch (err: unknown) {
+            const axiosErr = err as { response?: { data?: { detail?: string } } };
+            const detail = axiosErr.response?.data?.detail;
             updateActionState(bill.id, {
                 ...current,
                 status: 'error',

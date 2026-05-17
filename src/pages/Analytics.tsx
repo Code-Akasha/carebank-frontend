@@ -32,8 +32,8 @@ export default function Analytics() {
       if (res.data && Array.isArray(res.data.transactions)) {
         setTransactions(res.data.transactions);
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to load analytics data');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load analytics data');
     } finally {
       setLoading(false);
     }

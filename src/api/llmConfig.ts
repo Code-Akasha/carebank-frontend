@@ -4,10 +4,12 @@
  */
 
 // Tunnel Configuration Types
+export type LLMProviderType = 'ollama' | 'gemini' | 'openai';
+
 export interface LLMTunnelConfig {
   id: number;
   environment: 'development' | 'staging' | 'production';
-  provider_type: string; // "ngrok"
+  provider_type: LLMProviderType | string;
   tunnel_url: string;
   tunnel_auth_token_masked?: string;
   ollama_model_default: string;
@@ -21,7 +23,8 @@ export interface LLMTunnelConfig {
 }
 
 export interface LLMTunnelConfigCreate {
-  tunnel_url: string;
+  provider_type: LLMProviderType;
+  tunnel_url?: string;
   tunnel_auth_token?: string;
   ollama_model_default: string;
   request_timeout_sec: number;

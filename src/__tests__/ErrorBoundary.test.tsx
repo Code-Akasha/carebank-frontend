@@ -1,8 +1,9 @@
-import { describe, it, expect } from "vitest";
+import React from "react";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 
-function BrokenComponent(): JSX.Element {
+function BrokenComponent(): React.ReactNode {
     throw new Error("Test error");
 }
 
@@ -60,7 +61,7 @@ describe("ErrorBoundary", () => {
             return <div data-testid="recovered">Recovered</div>;
         }
 
-        const { rerender } = render(
+        render(
             <ErrorBoundary>
                 <ConditionalBroken />
             </ErrorBoundary>

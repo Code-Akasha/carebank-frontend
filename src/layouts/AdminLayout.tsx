@@ -4,7 +4,6 @@ import {
     LayoutDashboard,
     Users,
     Activity,
-    PlayCircle,
     LogOut,
     ShieldAlert,
     Webhook,
@@ -24,7 +23,6 @@ export default function AdminLayout() {
         { path: '/admin', icon: LayoutDashboard, label: 'Overview', end: true },
         { path: '/admin/users', icon: Users, label: 'Users' },
         { path: '/admin/agents', icon: Activity, label: 'Agent Monitor' },
-        { path: '/admin/simulation', icon: PlayCircle, label: 'Simulation' },
         { path: '/admin/webhooks', icon: Webhook, label: 'Webhooks' },
         { path: '/admin/llm-config', icon: Zap, label: 'LLM Configuration' },
     ];

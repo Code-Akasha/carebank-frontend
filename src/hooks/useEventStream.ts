@@ -15,6 +15,8 @@ export function useEventStream({ onEvent, onError, enabled = true }: SSEOptions)
     const retryCountRef = useRef(0);
     const maxRetries = 5;
 
+    const connectRef = useRef<() => void>(() => {});
+
     const connect = useCallback(() => {
         if (!enabled) return;
 
@@ -45,10 +47,14 @@ export function useEventStream({ onEvent, onError, enabled = true }: SSEOptions)
             if (retryCountRef.current < maxRetries) {
                 const delay = Math.min(1000 * Math.pow(2, retryCountRef.current), 30000);
                 retryCountRef.current += 1;
-                setTimeout(connect, delay);
+                setTimeout(() => connectRef.current(), delay);
             }
         };
     }, [enabled, onEvent, onError]);
+
+    useEffect(() => {
+        connectRef.current = connect;
+    }, [connect]);
 
     useEffect(() => {
         connect();

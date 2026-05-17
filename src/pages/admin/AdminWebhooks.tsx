@@ -5,7 +5,7 @@ import { api } from '../../lib/api';
 interface DeadLetter {
     id: string;
     event_type: string;
-    payload: any;
+    payload: Record<string, unknown>;
     failed_at: string;
     attempts: number;
     last_error: string;
@@ -26,8 +26,8 @@ export default function AdminWebhooks() {
                 ? res.data
                 : (res.data?.records || []);
             setDeadLetters(records);
-        } catch (err: any) {
-            setError(err.message || 'Failed to load dead letters');
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Failed to load dead letters');
         } finally {
             setLoading(false);
         }
@@ -42,7 +42,7 @@ export default function AdminWebhooks() {
         try {
             await api.post(`/api/admin/webhooks/dead-letter/${id}/replay`);
             setDeadLetters(prev => prev.filter(dl => dl.id !== id));
-        } catch (err) {
+        } catch {
             alert('Failed to replay webhook');
         } finally {
             setReplaying(null);

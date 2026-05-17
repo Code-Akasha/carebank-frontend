@@ -1,11 +1,17 @@
 import { useState, useEffect } from 'react';
 import { AlertTriangle, CheckCircle, Settings, Zap, FileText, Landmark } from 'lucide-react';
 import { api } from '../../lib/api';
-import type { BankingConnectorConfig, BankingConnectorTestResponse } from '../../api/llmConfig';
+import type {
+  BankingConnectorConfig,
+  BankingConnectorTestResponse,
+  LLMProviderType,
+  LLMTunnelConfigCreate,
+} from '../../api/llmConfig';
 
 interface LLMTunnelConfig {
   id: number;
   environment: string;
+  provider_type: string;
   tunnel_url: string;
   tunnel_auth_token_masked?: string;
   ollama_model_default: string;
@@ -33,6 +39,35 @@ interface AgentPromptConfig {
   notes?: string;
 }
 
+const LLM_PROVIDER_OPTIONS: Array<{ value: LLMProviderType; label: string; description: string }> = [
+  {
+    value: 'ollama',
+    label: 'Local Ollama',
+    description: 'Use a self-hosted Ollama instance through a local URL or ngrok tunnel.',
+  },
+  {
+    value: 'gemini',
+    label: 'Gemini API',
+    description: 'Use Google Gemini with an API key and model name.',
+  },
+  {
+    value: 'openai',
+    label: 'OpenAI / compatible API',
+    description: 'Use OpenAI or an OpenAI-compatible endpoint with an API key.',
+  },
+];
+
+const normalizeProviderType = (providerType?: string): LLMProviderType => {
+  const normalized = (providerType || 'ollama').toLowerCase();
+  if (normalized === 'ngrok' || normalized === 'local' || normalized === 'ollama') {
+    return 'ollama';
+  }
+  if (normalized === 'gemini' || normalized === 'openai') {
+    return normalized;
+  }
+  return 'ollama';
+};
+
 type TabType = 'connection' | 'models' | 'prompts' | 'banking';
 
 export default function AdminLLMConfig() {
@@ -55,7 +90,7 @@ export default function AdminLLMConfig() {
           LLM Configuration
         </h1>
         <p className="text-slate-600 mt-2">
-          Manage Ollama tunnel connections, discover models, and customize agent prompts
+          Manage local Ollama, Gemini, and OpenAI-compatible providers, discover models, and customize agent prompts
         </p>
       </div>
 
@@ -202,6 +237,7 @@ function ConnectionSettingsPanel({
   const [saving, setSaving] = useState(false);
 
   const [formData, setFormData] = useState({
+    provider_type: 'ollama' as LLMProviderType,
     tunnel_url: '',
     tunnel_auth_token: '',
     ollama_model_default: 'qwen3:8b',
@@ -217,7 +253,9 @@ function ConnectionSettingsPanel({
     try {
       const response = await api.get(`/api/admin/llm/tunnel/${environment}`);
       setConfig(response.data);
+      const providerType = normalizeProviderType(response.data.provider_type);
       setFormData({
+        provider_type: providerType,
         tunnel_url: response.data.tunnel_url || '',
         tunnel_auth_token: '',
         ollama_model_default: response.data.ollama_model_default || 'qwen3:8b',
@@ -232,25 +270,37 @@ function ConnectionSettingsPanel({
   };
 
   const handleSave = async () => {
-    if (!formData.tunnel_url.trim()) {
-      onError('Tunnel URL is required');
+    if (formData.provider_type === 'ollama' && !formData.tunnel_url.trim()) {
+      onError('Tunnel URL is required for local Ollama');
+      return;
+    }
+
+    if (
+      (formData.provider_type === 'gemini' || formData.provider_type === 'openai') &&
+      !formData.tunnel_auth_token.trim() &&
+      !config?.tunnel_auth_token_masked
+    ) {
+      onError('API key is required for Gemini and OpenAI providers');
       return;
     }
 
     setSaving(true);
     try {
-      const response = await api.put(`/api/admin/llm/tunnel/${environment}`, {
+      const payload: LLMTunnelConfigCreate = {
+        provider_type: formData.provider_type,
         tunnel_url: formData.tunnel_url,
         tunnel_auth_token: formData.tunnel_auth_token || undefined,
         ollama_model_default: formData.ollama_model_default,
         request_timeout_sec: formData.request_timeout_sec,
-      });
+      };
+
+      const response = await api.put(`/api/admin/llm/tunnel/${environment}`, payload);
 
       setConfig(response.data);
-      onSuccess('Tunnel configuration updated successfully');
+      onSuccess('LLM provider configuration updated successfully');
       setFormData({ ...formData, tunnel_auth_token: '' });
-    } catch (error: any) {
-      onError(error.response?.data?.detail || 'Failed to update configuration');
+    } catch (error: unknown) {
+      onError((error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Failed to update configuration');
     } finally {
       setSaving(false);
     }
@@ -271,8 +321,8 @@ function ConnectionSettingsPanel({
       } else {
         onError(`Connectivity test failed: ${response.data.error}`);
       }
-    } catch (error: any) {
-      onError(error.response?.data?.detail || 'Connectivity test failed');
+    } catch (error: unknown) {
+      onError((error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Connectivity test failed');
     } finally {
       setSaving(false);
     }
@@ -285,31 +335,75 @@ function ConnectionSettingsPanel({
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-6">
+        {/* Provider Type */}
+        <div>
+          <label className="block text-sm font-semibold text-slate-700 mb-2">
+            Provider Type
+          </label>
+          <div className="grid gap-3 md:grid-cols-3">
+            {LLM_PROVIDER_OPTIONS.map((option) => {
+              const isActive = formData.provider_type === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() =>
+                    setFormData((current) => ({
+                      ...current,
+                      provider_type: option.value,
+                    }))
+                  }
+                  className={`text-left rounded-xl border p-4 transition-colors ${
+                    isActive
+                      ? 'border-blue-600 bg-blue-50 shadow-sm'
+                      : 'border-slate-200 bg-white hover:border-slate-300'
+                  }`}
+                >
+                  <div className="font-semibold text-slate-900">{option.label}</div>
+                  <div className="mt-1 text-sm text-slate-500">{option.description}</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Tunnel URL */}
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-2">
-            Tunnel URL (ngrok or custom)
+            {formData.provider_type === 'ollama'
+              ? 'Tunnel or Base URL'
+              : 'Base URL (optional)'}
           </label>
           <input
             type="text"
-            placeholder="https://abc123.ngrok.io"
+            placeholder={
+              formData.provider_type === 'ollama'
+                ? 'https://abc123.ngrok.io or http://localhost:11434'
+                : 'https://api.openai.com/v1 or custom endpoint'
+            }
             value={formData.tunnel_url}
             onChange={(e) => setFormData({ ...formData, tunnel_url: e.target.value })}
             className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <p className="text-sm text-slate-500 mt-1">
-            Base URL of your ngrok tunnel or secure endpoint to local Ollama
+            {formData.provider_type === 'ollama'
+              ? 'Base URL of your ngrok tunnel or local Ollama endpoint.'
+              : 'Optional base URL for compatible API endpoints.'}
           </p>
         </div>
 
         {/* Auth Token */}
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-2">
-            Auth Token (optional)
+            {formData.provider_type === 'ollama' ? 'Auth Token (optional)' : 'API Key'}
           </label>
           <input
             type="password"
-            placeholder="Leave empty to keep current token"
+            placeholder={
+              formData.provider_type === 'ollama'
+                ? 'Leave empty to keep current token'
+                : 'Enter API key'
+            }
             value={formData.tunnel_auth_token}
             onChange={(e) => setFormData({ ...formData, tunnel_auth_token: e.target.value })}
             className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -324,11 +418,11 @@ function ConnectionSettingsPanel({
         {/* Model Selection */}
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-2">
-            Default Ollama Model
+            Default Model
           </label>
           <input
             type="text"
-            placeholder="qwen3:8b"
+            placeholder={formData.provider_type === 'gemini' ? 'gemini-2.5-flash' : 'qwen3:8b'}
             value={formData.ollama_model_default}
             onChange={(e) =>
               setFormData({ ...formData, ollama_model_default: e.target.value })
@@ -336,7 +430,9 @@ function ConnectionSettingsPanel({
             className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <p className="text-sm text-slate-500 mt-1">
-            Default model to use from the Ollama instance
+            {formData.provider_type === 'ollama'
+              ? 'Default model to use from the Ollama instance.'
+              : 'Default model name for the selected provider.'}
           </p>
         </div>
 
@@ -401,10 +497,10 @@ function ConnectionSettingsPanel({
         </button>
         <button
           onClick={handleTestConnectivity}
-          disabled={saving || !formData.tunnel_url}
+          disabled={saving || formData.provider_type !== 'ollama' || !formData.tunnel_url}
           className="flex-1 bg-slate-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-slate-700 disabled:bg-slate-400"
         >
-          {saving ? 'Testing...' : 'Test Connectivity'}
+          {saving ? 'Testing...' : 'Test Ollama Connectivity'}
         </button>
       </div>
     </div>
@@ -424,6 +520,7 @@ function ModelsPanel({
 }) {
   const [models, setModels] = useState<OllamaModel[]>([]);
   const [loading, setLoading] = useState(false);
+  const [providerType, setProviderType] = useState<LLMProviderType>('ollama');
 
   useEffect(() => {
     loadModels();
@@ -432,10 +529,19 @@ function ModelsPanel({
   const loadModels = async () => {
     setLoading(true);
     try {
+      const configResponse = await api.get(`/api/admin/llm/tunnel/${environment}`);
+      const normalizedProvider = normalizeProviderType(configResponse.data.provider_type);
+      setProviderType(normalizedProvider);
+
+      if (normalizedProvider !== 'ollama') {
+        setModels([]);
+        return;
+      }
+
       const response = await api.get(`/api/admin/llm/models?environment=${environment}`);
       setModels(response.data.models || []);
-    } catch (error: any) {
-      onError(error.response?.data?.detail || 'Failed to load models');
+    } catch (error: unknown) {
+      onError((error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Failed to load models');
       console.error(error);
     } finally {
       setLoading(false);
@@ -450,7 +556,9 @@ function ModelsPanel({
     return (
       <div className="text-center py-8 bg-slate-50 rounded-lg border border-slate-200">
         <p className="text-slate-500">
-          No models available. Configure tunnel connection and run connectivity test first.
+          {providerType === 'ollama'
+            ? 'No models available. Configure the local Ollama connection and run connectivity test first.'
+            : 'Model discovery is only available for local Ollama providers.'}
         </p>
       </div>
     );
@@ -524,8 +632,8 @@ function PromptsPanel({
         `/api/admin/llm/prompts?agent=${selectedAgent}&environment=${environment}`
       );
       setPrompts(response.data.prompts || []);
-    } catch (error: any) {
-      onError(error.response?.data?.detail || 'Failed to load prompts');
+    } catch (error: unknown) {
+      onError((error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Failed to load prompts');
     }
   };
 
@@ -544,8 +652,8 @@ function PromptsPanel({
       onSuccess('Prompt published successfully');
       loadPrompts();
       setEditingPrompt('');
-    } catch (error: any) {
-      onError(error.response?.data?.detail || 'Failed to publish prompt');
+    } catch (error: unknown) {
+      onError((error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Failed to publish prompt');
     } finally {
       setSaving(false);
     }
@@ -560,8 +668,8 @@ function PromptsPanel({
       );
       onSuccess(`Rolled back to version ${version}`);
       loadPrompts();
-    } catch (error: any) {
-      onError(error.response?.data?.detail || 'Failed to rollback prompt');
+    } catch (error: unknown) {
+      onError((error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Failed to rollback prompt');
     } finally {
       setSaving(false);
     }
@@ -689,8 +797,8 @@ function BankingProxyPanel({
         secret: '',
         request_timeout_sec: response.data.request_timeout_sec || 10,
       });
-    } catch (error: any) {
-      onError(error.response?.data?.detail || 'Failed to load banking connector config');
+    } catch (error: unknown) {
+      onError((error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Failed to load banking connector config');
     } finally {
       setLoading(false);
     }
@@ -707,8 +815,8 @@ function BankingProxyPanel({
       setConfig(response.data);
       setFormData((current) => ({ ...current, secret: '' }));
       onSuccess('Banking connector updated successfully');
-    } catch (error: any) {
-      onError(error.response?.data?.detail || 'Failed to update banking connector');
+    } catch (error: unknown) {
+      onError((error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Failed to update banking connector');
     } finally {
       setSaving(false);
     }
@@ -726,8 +834,8 @@ function BankingProxyPanel({
       } else {
         onError(response.data.error || 'Banking connector test failed');
       }
-    } catch (error: any) {
-      onError(error.response?.data?.detail || 'Banking connector test failed');
+    } catch (error: unknown) {
+      onError((error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Banking connector test failed');
     } finally {
       setSaving(false);
     }

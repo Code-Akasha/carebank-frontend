@@ -13,7 +13,8 @@ import {
     PieChart,
     Target,
     Receipt,
-    Bell
+    Bell,
+    Settings as SettingsIcon
 } from 'lucide-react';
 import { api } from '../lib/api';
 
@@ -49,7 +50,7 @@ export default function UserLayout() {
                 params: { limit: 12 },
             });
             setNotifications(Array.isArray(response.data) ? response.data : []);
-        } catch (err) {
+        } catch {
             setNotificationsError('Unable to load notifications.');
         } finally {
             if (!silent) {
@@ -66,7 +67,7 @@ export default function UserLayout() {
                     ? { ...item, read_at: new Date().toISOString() }
                     : item
             )));
-        } catch (err) {
+        } catch {
             setNotificationsError('Failed to update notification.');
         }
     };
@@ -91,11 +92,13 @@ export default function UserLayout() {
         { path: '/accounts', label: 'Accounts', icon: WalletCards },
         { path: '/analytics', label: 'Analytics', icon: PieChart },
         { path: '/planning', label: 'Planning', icon: Target },
+        { path: '/my-bills', label: 'My Bills', icon: Receipt },
         { path: '/bills', label: 'Bill Discovery', icon: Receipt },
         { path: '/simulator', label: 'Simulator', icon: LineChart },
         { path: '/products', label: 'Products', icon: ShoppingBag },
         { path: '/chat', label: 'Agent Chat', icon: MessageSquare },
         { path: '/integration', label: 'Integration Lab', icon: Workflow },
+        { path: '/settings', label: 'Settings', icon: SettingsIcon },
     ];
 
     return (
