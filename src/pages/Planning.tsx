@@ -117,8 +117,8 @@ export default function Planning() {
       setChecklist(checklistRes.data || []);
       setActionRequests(requestsRes.data || []);
       setActionExecutions(executionsRes.data || []);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load financial planning data');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load financial planning data');
     } finally {
       setLoading(false);
     }
@@ -216,8 +216,9 @@ export default function Planning() {
         notes: '',
       });
       setShowGoalForm(false);
-    } catch (err: any) {
-      const detail = err?.response?.data?.detail;
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { detail?: string } } };
+      const detail = axiosErr.response?.data?.detail;
       setGoalError(typeof detail === 'string' ? detail : 'Failed to create goal.');
     } finally {
       setGoalSubmitting(false);
@@ -274,11 +275,21 @@ export default function Planning() {
         requires_approval: true,
       });
       setShowRuleForm(false);
-    } catch (err: any) {
-      const detail = err?.response?.data?.detail;
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { detail?: string } } };
+      const detail = axiosErr.response?.data?.detail;
       setRuleError(typeof detail === 'string' ? detail : 'Failed to create recurring rule.');
     } finally {
       setRuleSubmitting(false);
+    }
+  };
+
+  const handleExecuteRule = async (ruleId: number) => {
+    try {
+      await api.post(`/api/recurring-payments/${ruleId}/execute`);
+      fetchData();
+    } catch {
+      setError('Failed to execute recurring rule.');
     }
   };
 
@@ -289,7 +300,7 @@ export default function Planning() {
         status: nextStatus,
       });
       setChecklist((prev) => prev.map((entry) => entry.id === item.id ? response.data : entry));
-    } catch (err) {
+    } catch {
       setError('Failed to update checklist status.');
     }
   };
@@ -307,7 +318,7 @@ export default function Planning() {
       if (execution) {
         setActionExecutions((prev) => [execution, ...prev.filter((entry) => entry.id !== execution.id)]);
       }
-    } catch (err) {
+    } catch {
       setError('Failed to approve action request.');
     }
   };
@@ -321,7 +332,7 @@ export default function Planning() {
       if (updated) {
         setActionRequests((prev) => prev.map((entry) => entry.id === requestId ? updated : entry));
       }
-    } catch (err) {
+    } catch {
       setError('Failed to reject action request.');
     }
   };
@@ -632,9 +643,17 @@ export default function Planning() {
                   <div className="font-medium text-slate-900">{rule.title}</div>
                   <div className="text-xs text-slate-500">Next run: {formatDate(rule.next_run_date)} • Day {rule.day_of_month}</div>
                 </div>
-                <div className="text-right">
-                  <div className="font-semibold text-slate-900">{formatCurrency(rule.amount)}</div>
-                  <div className="text-xs text-slate-500">{rule.autopay_enabled ? 'Autopay' : 'Manual approval'}</div>
+                <div className="text-right flex items-center gap-4">
+                  <div>
+                    <div className="font-semibold text-slate-900">{formatCurrency(rule.amount)}</div>
+                    <div className="text-xs text-slate-500">{rule.autopay_enabled ? 'Autopay' : 'Manual approval'}</div>
+                  </div>
+                  <button
+                    onClick={() => handleExecuteRule(rule.id)}
+                    className="px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-xs font-semibold transition-colors"
+                  >
+                    Run Now
+                  </button>
                 </div>
               </div>
             ))}
