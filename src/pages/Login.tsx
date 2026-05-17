@@ -14,6 +14,9 @@ export default function Login() {
     const [loading, setLoading] = useState(false);
     const [showMpinSetup, setShowMpinSetup] = useState(false);
     const [redirectRole, setRedirectRole] = useState('user');
+    const [accountType, setAccountType] = useState<'personal' | 'business'>('personal');
+    const [businessName, setBusinessName] = useState('');
+    const [businessCategory, setBusinessCategory] = useState('');
     const navigate = useNavigate();
     const location = useLocation();
     const { login } = useAuth();
@@ -32,6 +35,11 @@ export default function Login() {
                     email,
                     password,
                     full_name: fullName.trim(),
+                    account_type: accountType,
+                    ...(accountType === 'business' ? {
+                        business_name: businessName.trim(),
+                        business_category: businessCategory.trim(),
+                    } : {}),
                 });
             const { access_token, user_id, role, full_name } = response.data;
 
@@ -45,6 +53,8 @@ export default function Login() {
 
             if (role === 'admin') {
                 navigate('/admin', { replace: true });
+            } else if (role === 'business') {
+                navigate('/business', { replace: true });
             } else {
                 navigate(from, { replace: true });
             }
@@ -124,6 +134,39 @@ export default function Login() {
                             </div>
                         )}
 
+                        {mode === 'register' && (
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">Account Type</label>
+                                <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1">
+                                    <button type="button" onClick={() => setAccountType('personal')} className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${accountType === 'personal' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Personal</button>
+                                    <button type="button" onClick={() => setAccountType('business')} className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${accountType === 'business' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Business</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {mode === 'register' && accountType === 'business' && (
+                            <>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">Business Name</label>
+                                    <input type="text" value={businessName} onChange={e => setBusinessName(e.target.value)} required className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors" placeholder="e.g. City Gas Supply" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">Business Category</label>
+                                    <select value={businessCategory} onChange={e => setBusinessCategory(e.target.value)} required className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors">
+                                        <option value="">Select category</option>
+                                        <option value="gas">Gas</option>
+                                        <option value="electricity">Electricity</option>
+                                        <option value="telecom">Telecom</option>
+                                        <option value="housing">Housing / Rent</option>
+                                        <option value="water">Water</option>
+                                        <option value="internet">Internet</option>
+                                        <option value="insurance">Insurance</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </>
+                        )}
+
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-2">
                                 Email Address
@@ -179,6 +222,8 @@ export default function Login() {
                         setShowMpinSetup(false);
                         if (redirectRole === 'admin') {
                             navigate('/admin', { replace: true });
+                        } else if (redirectRole === 'business') {
+                            navigate('/business', { replace: true });
                         } else {
                             navigate(from, { replace: true });
                         }
