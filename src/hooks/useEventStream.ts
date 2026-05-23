@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from "react";
+import { API_BASE_URL } from "../lib/api";
 
 interface SSEOptions {
     onEvent: (event: { type: string; [key: string]: unknown }) => void;
@@ -23,8 +24,7 @@ export function useEventStream({ onEvent, onError, enabled = true }: SSEOptions)
         const token = localStorage.getItem("access_token");
         if (!token) return;
 
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
-        const url = `${baseUrl}/api/events/stream?token=${encodeURIComponent(token)}`;
+        const url = `${API_BASE_URL}/api/events/stream?token=${encodeURIComponent(token)}`;
 
         const es = new EventSource(url);
         eventSourceRef.current = es;
