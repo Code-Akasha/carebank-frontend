@@ -1132,81 +1132,99 @@ export default function IntegrationLab() {
                 </div>
 
                 <form onSubmit={createBeneficiary} className="grid gap-2 md:grid-cols-3">
-                    <input
-                        value={beneficiaryDraft.name}
-                        onChange={(e) =>
-                            setBeneficiaryDraft((prev) => ({ ...prev, name: e.target.value }))
-                        }
-                        className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                        placeholder="Name"
-                    />
-                    <select
-                        value={beneficiaryDraft.payment_rail}
-                        onChange={(e) =>
-                            setBeneficiaryDraft((prev) => ({
-                                ...prev,
-                                payment_rail: e.target.value,
-                            }))
-                        }
-                        className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                    >
-                        <option value="UPI">UPI</option>
-                        <option value="NEFT">NEFT</option>
-                        <option value="RTGS">RTGS</option>
-                        <option value="IMPS">IMPS</option>
-                    </select>
-                    <input
-                        value={beneficiaryDraft.nickname}
-                        onChange={(e) =>
-                            setBeneficiaryDraft((prev) => ({ ...prev, nickname: e.target.value }))
-                        }
-                        className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                        placeholder="Nickname (optional)"
-                    />
-
-                    {beneficiaryDraft.payment_rail === "UPI" ? (
+                    <div className="flex flex-col gap-1">
+                        <label className="text-xs font-medium text-slate-600 ml-1">Name</label>
                         <input
-                            value={beneficiaryDraft.upi_handle}
+                            value={beneficiaryDraft.name}
+                            onChange={(e) =>
+                                setBeneficiaryDraft((prev) => ({ ...prev, name: e.target.value }))
+                            }
+                            className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                            placeholder="Name"
+                        />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <label className="text-xs font-medium text-slate-600 ml-1">Payment Rail</label>
+                        <select
+                            value={beneficiaryDraft.payment_rail}
                             onChange={(e) =>
                                 setBeneficiaryDraft((prev) => ({
                                     ...prev,
-                                    upi_handle: e.target.value,
+                                    payment_rail: e.target.value,
                                 }))
                             }
-                            className="rounded-lg border border-slate-200 px-3 py-2 text-sm md:col-span-2"
-                            placeholder="UPI handle"
+                            className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                        >
+                            <option value="UPI">UPI</option>
+                            <option value="NEFT">NEFT</option>
+                            <option value="RTGS">RTGS</option>
+                            <option value="IMPS">IMPS</option>
+                        </select>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <label className="text-xs font-medium text-slate-600 ml-1">Nickname</label>
+                        <input
+                            value={beneficiaryDraft.nickname}
+                            onChange={(e) =>
+                                setBeneficiaryDraft((prev) => ({ ...prev, nickname: e.target.value }))
+                            }
+                            className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                            placeholder="Nickname (optional)"
                         />
+                    </div>
+
+                    {beneficiaryDraft.payment_rail === "UPI" ? (
+                        <div className="flex flex-col gap-1 md:col-span-2">
+                            <label className="text-xs font-medium text-slate-600 ml-1">UPI Handle</label>
+                            <input
+                                value={beneficiaryDraft.upi_handle}
+                                onChange={(e) =>
+                                    setBeneficiaryDraft((prev) => ({
+                                        ...prev,
+                                        upi_handle: e.target.value,
+                                    }))
+                                }
+                                className="rounded-lg border border-slate-200 px-3 py-2 text-sm w-full"
+                                placeholder="UPI handle"
+                            />
+                        </div>
                     ) : (
                         <>
-                            <input
-                                value={beneficiaryDraft.account_number}
-                                onChange={(e) =>
-                                    setBeneficiaryDraft((prev) => ({
-                                        ...prev,
-                                        account_number: e.target.value,
-                                    }))
-                                }
-                                className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                                placeholder="Account number"
-                            />
-                            <input
-                                value={beneficiaryDraft.ifsc}
-                                onChange={(e) =>
-                                    setBeneficiaryDraft((prev) => ({
-                                        ...prev,
-                                        ifsc: e.target.value,
-                                    }))
-                                }
-                                className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                                placeholder="IFSC"
-                            />
+                            <div className="flex flex-col gap-1">
+                                <label className="text-xs font-medium text-slate-600 ml-1">Account Number</label>
+                                <input
+                                    value={beneficiaryDraft.account_number}
+                                    onChange={(e) =>
+                                        setBeneficiaryDraft((prev) => ({
+                                            ...prev,
+                                            account_number: e.target.value,
+                                        }))
+                                    }
+                                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                                    placeholder="Account number"
+                                />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <label className="text-xs font-medium text-slate-600 ml-1">IFSC Code</label>
+                                <input
+                                    value={beneficiaryDraft.ifsc}
+                                    onChange={(e) =>
+                                        setBeneficiaryDraft((prev) => ({
+                                            ...prev,
+                                            ifsc: e.target.value,
+                                        }))
+                                    }
+                                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                                    placeholder="IFSC"
+                                />
+                            </div>
                         </>
                     )}
 
                     <button
                         type="submit"
                         disabled={busy}
-                        className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60 md:col-span-3"
+                        className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60 md:col-span-3 mt-2"
                     >
                         Create Beneficiary
                     </button>
@@ -1406,54 +1424,72 @@ export default function IntegrationLab() {
                 </div>
 
                 <form onSubmit={createActionRequest} className="grid gap-2 md:grid-cols-4">
-                    <select
-                        value={actionDraft.action_type}
-                        onChange={(e) =>
-                            setActionDraft((prev) => ({ ...prev, action_type: e.target.value }))
-                        }
-                        className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                    >
-                        <option value="pay_bill">pay_bill</option>
-                        <option value="pay_rent">pay_rent</option>
-                        <option value="pay_gas">pay_gas</option>
-                        <option value="pay_utility">pay_utility</option>
-                        <option value="transfer_savings">transfer_savings</option>
-                    </select>
-                    <input
-                        value={actionDraft.amount}
-                        onChange={(e) =>
-                            setActionDraft((prev) => ({ ...prev, amount: e.target.value }))
-                        }
-                        className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                        placeholder="Amount"
-                        type="number"
-                    />
-                    <input
-                        value={actionDraft.beneficiary_id}
-                        onChange={(e) =>
-                            setActionDraft((prev) => ({
-                                ...prev,
-                                beneficiary_id: e.target.value,
-                            }))
-                        }
-                        className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                        placeholder="Beneficiary id (optional)"
-                    />
-                    <input
-                        value={actionDraft.description}
-                        onChange={(e) =>
-                            setActionDraft((prev) => ({
-                                ...prev,
-                                description: e.target.value,
-                            }))
-                        }
-                        className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                        placeholder="Description"
-                    />
+                    <div className="flex flex-col gap-1">
+                        <label className="text-xs font-medium text-slate-600 ml-1">Action Type</label>
+                        <select
+                            value={actionDraft.action_type}
+                            onChange={(e) =>
+                                setActionDraft((prev) => ({ ...prev, action_type: e.target.value }))
+                            }
+                            className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                        >
+                            <option value="pay_bill">pay_bill</option>
+                            <option value="pay_rent">pay_rent</option>
+                            <option value="pay_gas">pay_gas</option>
+                            <option value="pay_utility">pay_utility</option>
+                            <option value="transfer_savings">transfer_savings</option>
+                        </select>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <label className="text-xs font-medium text-slate-600 ml-1">Amount</label>
+                        <input
+                            value={actionDraft.amount}
+                            onChange={(e) =>
+                                setActionDraft((prev) => ({ ...prev, amount: e.target.value }))
+                            }
+                            className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                            placeholder="Amount"
+                            type="number"
+                        />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <label className="text-xs font-medium text-slate-600 ml-1">Beneficiary</label>
+                        <select
+                            value={actionDraft.beneficiary_id}
+                            onChange={(e) =>
+                                setActionDraft((prev) => ({
+                                    ...prev,
+                                    beneficiary_id: e.target.value,
+                                }))
+                            }
+                            className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                        >
+                            <option value="">None (Optional)</option>
+                            {beneficiaries.map((b) => (
+                                <option key={b.id} value={b.id}>
+                                    {b.name} ({b.payment_rail})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <label className="text-xs font-medium text-slate-600 ml-1">Description</label>
+                        <input
+                            value={actionDraft.description}
+                            onChange={(e) =>
+                                setActionDraft((prev) => ({
+                                    ...prev,
+                                    description: e.target.value,
+                                }))
+                            }
+                            className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                            placeholder="Description"
+                        />
+                    </div>
                     <button
                         type="submit"
                         disabled={busy}
-                        className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60 md:col-span-4"
+                        className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60 md:col-span-4 mt-2"
                     >
                         Create Action Request
                     </button>
