@@ -235,6 +235,7 @@ function ConnectionSettingsPanel({
   const [config, setConfig] = useState<LLMTunnelConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
 
   const [formData, setFormData] = useState({
     provider_type: 'ollama' as LLMProviderType,
@@ -261,6 +262,17 @@ function ConnectionSettingsPanel({
         ollama_model_default: response.data.ollama_model_default || 'qwen3:8b',
         request_timeout_sec: response.data.request_timeout_sec || 30,
       });
+
+      if (response.data.is_active && (providerType === 'gemini' || providerType === 'ollama')) {
+        try {
+          const modelsRes = await api.get(`/api/admin/llm/models?environment=${environment}`);
+          if (modelsRes.data.models) {
+            setAvailableModels(modelsRes.data.models.map((m: any) => m.name));
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
     } catch (error) {
       onError('Failed to load tunnel configuration');
       console.error(error);
@@ -318,6 +330,14 @@ function ConnectionSettingsPanel({
         onSuccess(
           `Connectivity test passed! Found ${response.data.models_count} models. Response time: ${response.data.response_time_ms}ms`
         );
+        try {
+          const modelsRes = await api.get(`/api/admin/llm/models?environment=${environment}`);
+          if (modelsRes.data.models) {
+            setAvailableModels(modelsRes.data.models.map((m: any) => m.name));
+          }
+        } catch (e) {
+          // ignore
+        }
       } else {
         onError(`Connectivity test failed: ${response.data.error}`);
       }
@@ -422,7 +442,7 @@ function ConnectionSettingsPanel({
           <label className="block text-sm font-semibold text-slate-700 mb-2">
             Default Model
           </label>
-          {formData.provider_type === 'gemini' ? (
+          {formData.provider_type === 'gemini' || (formData.provider_type === 'ollama' && availableModels.length > 0) ? (
             <select
               value={formData.ollama_model_default}
               onChange={(e) =>
@@ -430,11 +450,21 @@ function ConnectionSettingsPanel({
               }
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             >
-              <option value="gemini-2.5-flash">gemini-2.5-flash</option>
-              <option value="gemini-2.5-pro">gemini-2.5-pro</option>
-              <option value="gemini-1.5-flash">gemini-1.5-flash</option>
-              <option value="gemini-1.5-pro">gemini-1.5-pro</option>
-              <option value="gemini-1.5-flash-8b">gemini-1.5-flash-8b</option>
+              {availableModels.length > 0 ? (
+                availableModels.map((model) => (
+                  <option key={model} value={model}>{model}</option>
+                ))
+              ) : formData.provider_type === 'gemini' ? (
+                <>
+                  <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                  <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+                  <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+                  <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+                  <option value="gemini-1.5-flash-8b">gemini-1.5-flash-8b</option>
+                </>
+              ) : (
+                <option value={formData.ollama_model_default}>{formData.ollama_model_default}</option>
+              )}
             </select>
           ) : (
             <input
