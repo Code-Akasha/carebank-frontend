@@ -247,6 +247,7 @@ function ConnectionSettingsPanel({
 
   useEffect(() => {
     loadConfig();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [environment]);
 
   const loadConfig = async () => {
@@ -267,9 +268,9 @@ function ConnectionSettingsPanel({
         try {
           const modelsRes = await api.get(`/api/admin/llm/models?environment=${environment}`);
           if (modelsRes.data.models) {
-            setAvailableModels(modelsRes.data.models.map((m: any) => m.name));
+            setAvailableModels(modelsRes.data.models.map((m: { name: string }) => m.name));
           }
-        } catch (e) {
+        } catch {
           // ignore
         }
       }
@@ -333,9 +334,9 @@ function ConnectionSettingsPanel({
         try {
           const modelsRes = await api.get(`/api/admin/llm/models?environment=${environment}`);
           if (modelsRes.data.models) {
-            setAvailableModels(modelsRes.data.models.map((m: any) => m.name));
+            setAvailableModels(modelsRes.data.models.map((m: { name: string }) => m.name));
           }
-        } catch (e) {
+        } catch {
           // ignore
         }
       } else {
@@ -572,6 +573,7 @@ function ModelsPanel({
 
   useEffect(() => {
     loadModels();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [environment]);
 
   const loadModels = async () => {
@@ -674,6 +676,7 @@ function PromptsPanel({
 
   useEffect(() => {
     loadPrompts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [environment]);
 
   const loadPrompts = async () => {
@@ -835,6 +838,7 @@ function BankingProxyPanel({
 
   useEffect(() => {
     loadConfig();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [environment]);
 
   const loadConfig = async () => {
