@@ -368,29 +368,31 @@ function ConnectionSettingsPanel({
         </div>
 
         {/* Tunnel URL */}
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">
-            {formData.provider_type === 'ollama'
-              ? 'Tunnel or Base URL'
-              : 'Base URL (optional)'}
-          </label>
-          <input
-            type="text"
-            placeholder={
-              formData.provider_type === 'ollama'
-                ? 'https://abc123.ngrok.io or http://localhost:11434'
-                : 'https://api.openai.com/v1 or custom endpoint'
-            }
-            value={formData.tunnel_url}
-            onChange={(e) => setFormData({ ...formData, tunnel_url: e.target.value })}
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <p className="text-sm text-slate-500 mt-1">
-            {formData.provider_type === 'ollama'
-              ? 'Base URL of your ngrok tunnel or local Ollama endpoint.'
-              : 'Optional base URL for compatible API endpoints.'}
-          </p>
-        </div>
+        {formData.provider_type !== 'gemini' && (
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              {formData.provider_type === 'ollama'
+                ? 'Tunnel or Base URL'
+                : 'Base URL (optional)'}
+            </label>
+            <input
+              type="text"
+              placeholder={
+                formData.provider_type === 'ollama'
+                  ? 'https://abc123.ngrok.io or http://localhost:11434'
+                  : 'https://api.openai.com/v1 or custom endpoint'
+              }
+              value={formData.tunnel_url}
+              onChange={(e) => setFormData({ ...formData, tunnel_url: e.target.value })}
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="text-sm text-slate-500 mt-1">
+              {formData.provider_type === 'ollama'
+                ? 'Base URL of your ngrok tunnel or local Ollama endpoint.'
+                : 'Optional base URL for compatible API endpoints.'}
+            </p>
+          </div>
+        )}
 
         {/* Auth Token */}
         <div>
@@ -420,15 +422,31 @@ function ConnectionSettingsPanel({
           <label className="block text-sm font-semibold text-slate-700 mb-2">
             Default Model
           </label>
-          <input
-            type="text"
-            placeholder={formData.provider_type === 'gemini' ? 'gemini-2.5-flash' : 'qwen3:8b'}
-            value={formData.ollama_model_default}
-            onChange={(e) =>
-              setFormData({ ...formData, ollama_model_default: e.target.value })
-            }
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          {formData.provider_type === 'gemini' ? (
+            <select
+              value={formData.ollama_model_default}
+              onChange={(e) =>
+                setFormData({ ...formData, ollama_model_default: e.target.value })
+              }
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+              <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+              <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+              <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+              <option value="gemini-1.5-flash-8b">gemini-1.5-flash-8b</option>
+            </select>
+          ) : (
+            <input
+              type="text"
+              placeholder={formData.provider_type === 'openai' ? 'gpt-4o' : 'qwen3:8b'}
+              value={formData.ollama_model_default}
+              onChange={(e) =>
+                setFormData({ ...formData, ollama_model_default: e.target.value })
+              }
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          )}
           <p className="text-sm text-slate-500 mt-1">
             {formData.provider_type === 'ollama'
               ? 'Default model to use from the Ollama instance.'
@@ -497,10 +515,10 @@ function ConnectionSettingsPanel({
         </button>
         <button
           onClick={handleTestConnectivity}
-          disabled={saving || formData.provider_type !== 'ollama' || !formData.tunnel_url}
+          disabled={saving || (formData.provider_type === 'ollama' && !formData.tunnel_url)}
           className="flex-1 bg-slate-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-slate-700 disabled:bg-slate-400"
         >
-          {saving ? 'Testing...' : 'Test Ollama Connectivity'}
+          {saving ? 'Testing...' : `Test ${formData.provider_type === 'gemini' ? 'Gemini' : formData.provider_type === 'openai' ? 'OpenAI' : 'Ollama'} Connectivity`}
         </button>
       </div>
     </div>
@@ -533,7 +551,7 @@ function ModelsPanel({
       const normalizedProvider = normalizeProviderType(configResponse.data.provider_type);
       setProviderType(normalizedProvider);
 
-      if (normalizedProvider !== 'ollama') {
+      if (normalizedProvider === 'openai') {
         setModels([]);
         return;
       }
@@ -558,7 +576,9 @@ function ModelsPanel({
         <p className="text-slate-500">
           {providerType === 'ollama'
             ? 'No models available. Configure the local Ollama connection and run connectivity test first.'
-            : 'Model discovery is only available for local Ollama providers.'}
+            : providerType === 'gemini'
+            ? 'No models available. Configure your Gemini API key and save first.'
+            : 'Model discovery is only available for local Ollama and Gemini providers.'}
         </p>
       </div>
     );
