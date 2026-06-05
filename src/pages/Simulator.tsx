@@ -85,13 +85,28 @@ export default function Simulator() {
                 <div className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-2">Amount (₹)</label>
-                        <input
-                            type="number"
-                            value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
-                            placeholder="e.g. 5000"
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 text-lg font-semibold outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                        />
+                        <div className="space-y-4">
+                            <input
+                                type="number"
+                                value={amount}
+                                onChange={(e) => setAmount(e.target.value)}
+                                placeholder="e.g. 5000"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 text-2xl font-bold outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-inner"
+                            />
+                            <input 
+                                type="range" 
+                                min="100" 
+                                max="100000" 
+                                step="100" 
+                                value={amount || 5000}
+                                onChange={(e) => setAmount(e.target.value)}
+                                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                            />
+                            <div className="flex justify-between text-xs text-slate-400 font-medium px-1">
+                                <span>₹100</span>
+                                <span>₹1,00,000+</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div>
@@ -145,20 +160,20 @@ export default function Simulator() {
 
                     {/* Forecast Comparison */}
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-white rounded-2xl border border-slate-100 p-5">
+                        <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-100 p-5 shadow-sm transition-all hover:shadow-md">
                             <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Current Forecast</p>
-                            <p className="text-2xl font-bold text-slate-900">
+                            <p className="text-3xl font-bold text-slate-900">
                                 ₹{result.current_forecast.end_of_month_balance?.toLocaleString('en-IN') ?? '—'}
                             </p>
                             <p className="text-xs text-slate-400 mt-1">Projected end-of-month</p>
                         </div>
 
-                        <div className="bg-white rounded-2xl border border-slate-100 p-5">
+                        <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-100 p-5 shadow-sm transition-all hover:shadow-md">
                             <div className="flex items-center gap-1 mb-2">
-                                <TrendingDown className="w-3.5 h-3.5 text-rose-500" />
+                                <TrendingDown className="w-4 h-4 text-rose-500" />
                                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">After Purchase</p>
                             </div>
-                            <p className="text-2xl font-bold text-slate-900">
+                            <p className="text-3xl font-bold text-slate-900">
                                 ₹{result.simulated_forecast.predicted_balance?.toLocaleString('en-IN')}
                             </p>
                             <p className={`text-sm font-semibold mt-1 ${result.impact.amount < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>

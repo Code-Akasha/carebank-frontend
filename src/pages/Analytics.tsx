@@ -57,14 +57,14 @@ export default function Analytics() {
   }
 
   // Calculate stats
-  const debits = transactions.filter(t => t.type === 'debit');
-  const totalSpent = debits.reduce((acc, t) => acc + t.amount, 0);
+  const debits = transactions.filter(t => t.amount < 0);
+  const totalSpent = debits.reduce((acc, t) => acc + Math.abs(t.amount), 0);
   
   // Group by category
   const categoryMap: Record<string, number> = {};
   debits.forEach(t => {
     const cat = t.category || 'Other';
-    categoryMap[cat] = (categoryMap[cat] || 0) + t.amount;
+    categoryMap[cat] = (categoryMap[cat] || 0) + Math.abs(t.amount);
   });
 
   const categoryData = Object.entries(categoryMap)
@@ -76,7 +76,7 @@ export default function Analytics() {
   debits.forEach(t => {
     const d = new Date(t.date);
     const month = d.toLocaleString('default', { month: 'short' });
-    monthMap[month] = (monthMap[month] || 0) + t.amount;
+    monthMap[month] = (monthMap[month] || 0) + Math.abs(t.amount);
   });
 
   const trendData = Object.entries(monthMap).map(([name, amount]) => ({ name, amount }));
